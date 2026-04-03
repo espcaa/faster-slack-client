@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=My Product
+Comment=A faster-slack-client application
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/faster-slack-client %u
+Terminal=false
+Type=Application
+Icon=faster-slack-client
+Categories=Utility;
+StartupWMClass=faster-slack-client
+
+ 
