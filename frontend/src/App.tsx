@@ -1,62 +1,23 @@
-import { createSignal, onMount } from "solid-js";
-import { Events } from "@wailsio/runtime";
-import { GreetService } from "../bindings/changeme";
+import { Navigate, Route, Router } from "@solidjs/router";
+import { useAuth } from "./AuthContext";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
+import type { ParentProps } from "solid-js";
+
+function AuthGuard(props: ParentProps) {
+  const { authed } = useAuth();
+  if (!authed()) return <Navigate href="/login" />;
+  return <>{props.children}</>;
+}
 
 function App() {
-  const [name, setName] = createSignal("");
-  const [result, setResult] = createSignal("Please enter your name below 👇");
-  const [time, setTime] = createSignal("Listening for Time event...");
-
-  const doGreet = () => {
-    let localName = name();
-    if (!localName) {
-      localName = "anonymous";
-    }
-    GreetService.Greet(localName)
-      .then((resultValue: string) => {
-        setResult(resultValue);
-      })
-      .catch((err: any) => {
-        console.log(err);
-      });
-  };
-
-  onMount(() => {
-    Events.On("time", (timeValue: any) => {
-      setTime(timeValue.data);
-    });
-  });
-
   return (
-    <div class="container">
-      <h1>Wails + Solid</h1>
-      <div aria-label="result" class="result">
-        {result()}
-      </div>
-      <div class="card">
-        <div class="input-box">
-          <input
-            aria-label="input"
-            class="input"
-            value={name()}
-            onInput={(e) => setName(e.currentTarget.value)}
-            type="text"
-            autocomplete="off"
-          />
-          <button aria-label="greet-btn" class="btn" onClick={doGreet}>
-            Greet
-          </button>
-        </div>
-      </div>
-      <div class="footer">
-        <div>
-          <p>Click on the Wails logo to learn more</p>
-        </div>
-        <div>
-          <p>{time()}</p>
-        </div>
-      </div>
-    </div>
+    <Router>
+      <Route path="/login" component={Login} />
+      <Route path="/" component={AuthGuard}>
+        <Route path="/" component={Home} />
+      </Route>
+    </Router>
   );
 }
 

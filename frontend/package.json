@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@solidjs/router": "^0.16.1",
     "@wailsio/runtime": "latest",
     "solid-js": "^1.8.7"
   },

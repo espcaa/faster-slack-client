@@ -1,0 +1,29 @@
+@import "./colors.css";
+@import "./base.css";
+@import "./utilities.css";
+
+@font-face {
+    font-family: "Fredoka";
+    font-style: normal;
+    font-weight: 300 700;
+    font-stretch: 75% 125%;
+
+    src:
+        local(""),
+        url("./FredokaVar.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 100 900;
+    font-stretch: 75% 100%;
+    src:
+        local(""),
+        url("./RobotoVar.ttf") format("truetype-variations");
+}
+
+body {
+    /* TODO: other oses support :sob: */
+    margin-top: 52px;
+}

@@ -1,0 +1,69 @@
+:root {
+    --c0-black: oklch(21% 0.01 70);
+    --c1-red: oklch(48% 0.18 25);
+    --c2-green: oklch(62% 0.14 108);
+    --c3-yellow: oklch(68% 0.16 75);
+    --c4-blue: oklch(53% 0.06 220);
+    --c5-magenta: oklch(53% 0.13 345);
+    --c6-cyan: oklch(60% 0.09 155);
+    --c7-white: oklch(67% 0.02 80);
+
+    --c8-bright-black: oklch(59% 0.02 70);
+    --c9-bright-red: oklch(62% 0.22 28);
+    --c10-bright-green: oklch(74% 0.16 108);
+    --c11-bright-yellow: oklch(82% 0.15 85);
+    --c12-bright-blue: oklch(66% 0.05 195);
+    --c13-bright-magenta: oklch(66% 0.1 350);
+    --c14-bright-cyan: oklch(73% 0.1 150);
+    --c15-bright-white: oklch(88% 0.04 85);
+
+    --color-ink: var(--c15-bright-white);
+    --color-ink-muted: var(--c8-bright-black);
+    --color-canvas: var(--c0-black);
+    --color-canvas-raised: oklch(25% 0.01 70);
+    --color-canvas-sunken: oklch(17% 0.01 70);
+
+    --color-border: oklch(30% 0.01 70);
+    --color-border-subtle: oklch(25% 0.01 70);
+
+    --color-link: var(--c12-bright-blue);
+    --color-positive: var(--c10-bright-green);
+    --color-negative: var(--c9-bright-red);
+    --color-warning: var(--c11-bright-yellow);
+    --color-accent: var(--c3-yellow);
+
+    --color-primary: var(--c3-yellow);
+    --color-primary-hover: var(--c11-bright-yellow);
+    --color-primary-muted: color-mix(
+        in oklch,
+        var(--c3-yellow) 15%,
+        var(--color-canvas)
+    );
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --color-ink: var(--c0-black);
+        --color-ink-muted: var(--c7-white);
+        --color-canvas: oklch(93% 0.03 85);
+        --color-canvas-raised: oklch(96% 0.02 85);
+        --color-canvas-sunken: oklch(88% 0.04 85);
+
+        --color-border: oklch(80% 0.03 80);
+        --color-border-subtle: oklch(86% 0.03 85);
+
+        --color-link: var(--c4-blue);
+        --color-positive: var(--c2-green);
+        --color-negative: var(--c1-red);
+        --color-warning: var(--c3-yellow);
+        --color-accent: var(--c3-yellow);
+
+        --color-primary: var(--c1-red);
+        --color-primary-hover: var(--c9-bright-red);
+        --color-primary-muted: color-mix(
+            in oklch,
+            var(--c1-red) 10%,
+            var(--color-canvas)
+        );
+    }
+}
