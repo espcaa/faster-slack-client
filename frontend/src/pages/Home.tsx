@@ -4,6 +4,8 @@ import { GetChannels, GetIMs } from "../../bindings/fastslack/slackservice";
 import styles from "./Home.module.css";
 import { Logout } from "../../bindings/fastslack/slackauthservice";
 import MessageList from "../components/MessageList";
+import { chatStore } from "../ChatStore";
+import ThreadView from "../components/ThreadView";
 
 export default function Home() {
   const { workspace } = useAuth();
@@ -55,7 +57,14 @@ export default function Home() {
           fallback={<div class={styles.loading}>Loading...</div>}
         >
           <For each={sortedIMs()}>
-            {(im) => <div class={styles.item}>{im.user}</div>}
+            {(im) => (
+              <div
+                class={styles.item}
+                onClick={() => setSelectedChannel(im.id)}
+              >
+                {im.user}
+              </div>
+            )}
           </For>
         </Show>
 
@@ -73,6 +82,15 @@ export default function Home() {
           <MessageList teamID={workspace()!} channelID={selectedChannel()!} />
         </Show>
       </div>
+      <Show when={chatStore.threadParent}>
+        {(parent) => (
+          <ThreadView
+            teamID={workspace()!}
+            channelID={selectedChannel()!}
+            parentMessage={parent()}
+          />
+        )}
+      </Show>
     </div>
   );
 }

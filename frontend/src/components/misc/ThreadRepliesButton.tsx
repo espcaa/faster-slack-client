@@ -2,6 +2,7 @@ import { createEffect, createSignal, For } from "solid-js";
 import { Message, UserProfile } from "../../../bindings/fastslack/shared";
 import styles from "./ThreadRepliesButton.module.css";
 import { ResolveUsers } from "../../../bindings/fastslack/slackservice";
+import { MdRoundArrow_forward_ios } from "solid-icons/md";
 
 function ThreadRepliesButton(props: {
   message: Message;
@@ -63,6 +64,7 @@ function ThreadRepliesButton(props: {
           })}
         </div>
       </div>
+      <MdRoundArrow_forward_ios class={styles.arrowIcon} />
     </button>
   );
 }

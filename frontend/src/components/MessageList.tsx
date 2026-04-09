@@ -101,15 +101,28 @@ export default function MessageList(props: {
 
       <For each={messages()}>
         {(msg, i) => {
-          const next = () => messages()[i() + 1];
-          const showHeader = () =>
-            i() === messages().length - 1 || next()?.user !== msg.user;
+          const nextOlder = () => messages()[i() + 1];
+          const showHeader = () => {
+            if (!nextOlder()) return true;
+
+            if (nextOlder().user !== msg.user) return true;
+
+            const diff = parseFloat(msg.ts) - parseFloat(nextOlder().ts);
+            return diff > 180;
+          };
           return (
             <MessageItem
               message={msg}
               profile={profiles()[msg.user]}
               showUser={showHeader()}
               workspaceID={props.teamID}
+              onThreadClick={(message) =>
+                setChatStore({
+                  threadTS: message.thread_ts || message.ts,
+                  threadParent: message,
+                })
+              }
+              showThreadButton={true}
             />
           );
         }}

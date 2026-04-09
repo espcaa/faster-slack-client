@@ -125,13 +125,24 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 		return nil, err
 	}
 
-	rows, err := db.Query(`
-    SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users
-    FROM messages
-    WHERE team_id = ? AND channel_id = ? AND thread_ts = ?
-    ORDER BY ts DESC
-    LIMIT ?
-    `, teamID, channelID, threadTS, limit)
+	var rows *sql.Rows
+	if threadTS == "" {
+		rows, err = db.Query(`
+		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users
+		FROM messages
+		WHERE team_id = ? AND channel_id = ? AND (thread_ts = '' OR thread_ts = ts)
+		ORDER BY ts DESC
+		LIMIT ?
+		`, teamID, channelID, limit)
+	} else {
+		rows, err = db.Query(`
+		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users
+		FROM messages
+		WHERE team_id = ? AND channel_id = ? AND thread_ts = ?
+		ORDER BY ts ASC
+		LIMIT ?
+		`, teamID, channelID, threadTS, limit)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -140,10 +151,6 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 	var msgs []shared.Message
 	for rows.Next() {
 		var m shared.Message
-		if err := rows.Scan(&m.Ts, &m.User, &m.Text, &m.Type, &m.Subtype, &m.Team, &m.ThreadTs); err != nil {
-			return nil, err
-		}
-
 		var replyUsers string
 		if err := rows.Scan(
 			&m.Ts, &m.User, &m.Text, &m.Type, &m.Subtype, &m.Team, &m.ThreadTs,
@@ -152,7 +159,6 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 			return nil, err
 		}
 		m.ReplyUsers = decodeReplyUsers(replyUsers)
-
 		msgs = append(msgs, m)
 	}
 	return msgs, rows.Err()
@@ -165,9 +171,10 @@ func UpsertMessage(teamID, channelID string, msg shared.Message) error {
 	}
 
 	_, err = db.Exec(`
-			INSERT OR REPLACE INTO messages (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`, teamID, channelID, msg.Ts, msg.User, msg.Text, msg.Type, msg.Subtype, msg.Team, msg.ThreadTs)
+			INSERT OR REPLACE INTO messages (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, teamID, channelID, msg.Ts, msg.User, msg.Text, msg.Type, msg.Subtype, msg.Team, msg.ThreadTs,
+		msg.ReplyCount, msg.LatestReply, encodeReplyUsers(msg.ReplyUsers))
 	return err
 }
 

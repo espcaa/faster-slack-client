@@ -110,3 +110,38 @@ func (c *Client) GetEmojisInfo(teamID string, names []string) ([]shared.Emoji, e
 
 	return result.Results, nil
 }
+
+func (c *Client) GetThreadReplies(teamID, channelID, threadTS, cursor string) (*shared.MessagesResponse, error) {
+	// set form data
+	params := url.Values{}
+	params.Set("channel", channelID)
+	params.Set("ts", threadTS)
+	params.Set("limit", "28")
+	if cursor != "" {
+		params.Set("cursor", cursor)
+	}
+
+	raw, err := c.Do(teamID, "conversations.replies", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp struct {
+		Ok       bool             `json:"ok"`
+		Messages []shared.Message `json:"messages"`
+		HasMore  bool             `json:"has_more"`
+		Metadata struct {
+			NextCursor string `json:"next_cursor"`
+		} `json:"response_metadata"`
+	}
+
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil, err
+	}
+
+	return &shared.MessagesResponse{
+		Messages:   resp.Messages,
+		HasMore:    resp.HasMore,
+		NextCursor: resp.Metadata.NextCursor,
+	}, nil
+}

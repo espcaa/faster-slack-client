@@ -10,6 +10,15 @@
     border-radius: var(--radius-md);
     max-width: 600px;
     margin-top: 4px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.arrowIcon {
+    width: 12px;
+    height: 12px;
+    fill: var(--color-primary);
+    margin-right: 8px;
 }
 
 .threadRepliesButton:hover {

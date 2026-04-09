@@ -31,6 +31,12 @@ export function GetMessages(teamID: string, channelID: string, cursor: string): 
     });
 }
 
+export function GetThreadMessages(teamID: string, channelID: string, threadTS: string, cursor: string): $CancellablePromise<shared$0.MessagesResponse | null> {
+    return $Call.ByID(4013703191, teamID, channelID, threadTS, cursor).then(($result: any) => {
+        return $$createType5($result);
+    });
+}
+
 export function ResolveEmojis(teamID: string, names: string[]): $CancellablePromise<shared$0.Emoji[]> {
     return $Call.ByID(1381900964, teamID, names).then(($result: any) => {
         return $$createType7($result);

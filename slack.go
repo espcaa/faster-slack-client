@@ -147,8 +147,12 @@ func (s *SlackService) GetMessages(teamID, channelID, cursor string) (*shared.Me
 	if cursor == "" {
 		cached, err := store.GetCachedMessages(teamID, channelID, "", 100)
 		if err == nil && len(cached) > 0 {
-			return &shared.MessagesResponse{Messages: cached}, nil
+			return &shared.MessagesResponse{Messages: cached, HasMore: true, NextCursor: "cache"}, nil
 		}
+	}
+
+	if cursor == "cache" {
+		cursor = ""
 	}
 
 	resp, err := s.Client.GetConversationMessages(teamID, channelID, cursor)
@@ -170,4 +174,26 @@ func (s *SlackService) GetIMs(teamID string) []shared.Im {
 		ims = append(ims, im)
 	}
 	return ims
+}
+
+func (c *SlackService) GetThreadMessages(teamID, channelID, threadTS, cursor string) (*shared.MessagesResponse, error) {
+	if cursor == "" {
+		cached, err := store.GetCachedMessages(teamID, channelID, threadTS, 100)
+		// only use cache if we have more than just the parent message
+		if err == nil && len(cached) > 1 {
+			return &shared.MessagesResponse{Messages: cached, HasMore: true, NextCursor: "cache"}, nil
+		}
+	}
+
+	if cursor == "cache" {
+		cursor = ""
+	}
+
+	resp, err := c.Client.GetThreadReplies(teamID, channelID, threadTS, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	go store.SaveMessages(teamID, channelID, resp.Messages)
+	return resp, nil
 }

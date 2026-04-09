@@ -12,6 +12,8 @@ export default function MessageItem(props: {
   profile?: UserProfile;
   showUser?: boolean;
   workspaceID: string;
+  onThreadClick?: (message: Message) => void;
+  showThreadButton: boolean;
 }) {
   const getAvatarUrl = (profile: UserProfile) => {
     const hash = profile.profile.avatar_hash;
@@ -65,11 +67,17 @@ export default function MessageItem(props: {
           </div>
         </Show>
         <span class={styles.text}>{props.message.text}</span>
-        <Show when={props.message.reply_count && props.message.reply_count > 0}>
+        <Show
+          when={
+            props.message.reply_count &&
+            props.message.reply_count > 0 &&
+            props.showThreadButton
+          }
+        >
           <ThreadRepliesButton
             message={props.message}
             workspaceID={props.workspaceID}
-            onClick={() => {}}
+            onClick={() => props.onThreadClick?.(props.message)}
           />
         </Show>
       </div>
