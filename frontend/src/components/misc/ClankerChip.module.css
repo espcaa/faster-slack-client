@@ -1,0 +1,9 @@
+.clankerChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 4px;
+    background-color: var(--color-primary-muted);
+    border-radius: 4px;
+    color: var(--color-primary);
+    font-size: 10px;
+}

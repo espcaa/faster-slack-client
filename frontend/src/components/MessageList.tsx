@@ -6,7 +6,7 @@ import {
   ResolveUsers,
 } from "../../bindings/fastslack/slackservice";
 import MessageItem from "./MessageItem";
-import { chatStore, updateChannelCache } from "../ChatStore";
+import { chatStore, setChatStore, scrollPositions } from "../ChatStore";
 
 export default function MessageList(props: {
   teamID: string;
@@ -18,8 +18,7 @@ export default function MessageList(props: {
   const [fetchingOlder, setFetchingOlder] = createSignal(false);
   const [profiles, setProfiles] = createSignal<Record<string, UserProfile>>({});
 
-  const channelData = () => chatStore[props.channelID];
-  const messages = () => channelData()?.messages || [];
+  const messages = () => chatStore.messages;
 
   const fetchProfiles = async (msgs: Message[]) => {
     const userIDs = [...new Set(msgs.map((m) => m.user))];
@@ -29,15 +28,13 @@ export default function MessageList(props: {
     setProfiles((prev) => ({ ...prev, ...profileMap }));
   };
 
-  const loadInitialMessages = async (id: string) => {
-    if (channelData()?.hasLoaded) return;
-
+  const loadMessages = async (id: string) => {
     setLoading(true);
+    setChatStore({ messages: [], nextCursor: null });
     const res = await GetMessages(props.teamID, id, "");
     if (res) {
-      updateChannelCache(id, {
+      setChatStore({
         messages: [...res.messages],
-        hasLoaded: true,
         nextCursor: res.next_cursor || null,
       });
       fetchProfiles(res.messages);
@@ -46,7 +43,7 @@ export default function MessageList(props: {
   };
 
   const loadOlderMessages = async () => {
-    const cursor = channelData()?.nextCursor;
+    const cursor = chatStore.nextCursor;
     if (!cursor || fetchingOlder()) return;
 
     setFetchingOlder(true);
@@ -54,7 +51,7 @@ export default function MessageList(props: {
       const res = await GetMessages(props.teamID, props.channelID, cursor);
 
       if (res) {
-        updateChannelCache(props.channelID, {
+        setChatStore({
           messages: [...messages(), ...res.messages],
           nextCursor: res.next_cursor || null,
         });
@@ -69,12 +66,14 @@ export default function MessageList(props: {
   createEffect(
     on(
       () => props.channelID,
-      (id) => {
+      (id, prevID) => {
+        if (prevID) {
+          scrollPositions.set(prevID, containerRef.scrollTop);
+        }
         switchingChannel = true;
-        loadInitialMessages(id).then(() => {
+        loadMessages(id).then(() => {
           requestAnimationFrame(() => {
-            const saved = channelData()?.lastScroll;
-            containerRef.scrollTop = saved ?? 0;
+            containerRef.scrollTop = scrollPositions.get(id) ?? 0;
             switchingChannel = false;
           });
         });
@@ -86,7 +85,7 @@ export default function MessageList(props: {
     if (switchingChannel) return;
     const el = e.currentTarget as HTMLDivElement;
 
-    updateChannelCache(props.channelID, { lastScroll: el.scrollTop });
+    scrollPositions.set(props.channelID, el.scrollTop);
 
     const atVisualTop = el.scrollHeight - el.clientHeight + el.scrollTop <= 5;
     if (atVisualTop && !fetchingOlder()) {

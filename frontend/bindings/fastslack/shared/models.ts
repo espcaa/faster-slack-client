@@ -91,6 +91,35 @@ export class Channel {
     }
 }
 
+export class Emoji {
+    "name": string;
+    "value": string;
+    "updated": number;
+
+    /** Creates a new Emoji instance. */
+    constructor($$source: Partial<Emoji> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("value" in $$source)) {
+            this["value"] = "";
+        }
+        if (!("updated" in $$source)) {
+            this["updated"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Emoji instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Emoji {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Emoji($$parsedSource as Partial<Emoji>);
+    }
+}
+
 export class Im {
     "id": string;
     "created": number;
@@ -151,6 +180,10 @@ export class Message {
     "type": string;
     "subtype"?: string;
     "team"?: string;
+    "thread_ts"?: string;
+    "reply_count"?: number;
+    "latest_reply"?: string;
+    "reply_users"?: string[];
 
     /** Creates a new Message instance. */
     constructor($$source: Partial<Message> = {}) {
@@ -174,7 +207,11 @@ export class Message {
      * Creates a new Message instance from a string or object.
      */
     static createFrom($$source: any = {}): Message {
+        const $$createField9_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("reply_users" in $$parsedSource) {
+            $$parsedSource["reply_users"] = $$createField9_0($$parsedSource["reply_users"]);
+        }
         return new Message($$parsedSource as Partial<Message>);
     }
 }

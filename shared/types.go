@@ -155,12 +155,16 @@ type MessagesResponse struct {
 }
 
 type Message struct {
-	User    string `json:"user"`
-	Text    string `json:"text"`
-	Ts      string `json:"ts"`
-	Type    string `json:"type"`
-	Subtype string `json:"subtype,omitempty"`
-	Team    string `json:"team,omitempty"`
+	User        string   `json:"user"`
+	Text        string   `json:"text"`
+	Ts          string   `json:"ts"`
+	Type        string   `json:"type"`
+	Subtype     string   `json:"subtype,omitempty"`
+	Team        string   `json:"team,omitempty"`
+	ThreadTs    string   `json:"thread_ts,omitempty"`
+	ReplyCount  int      `json:"reply_count,omitempty"`
+	LatestReply string   `json:"latest_reply,omitempty"`
+	ReplyUsers  []string `json:"reply_users,omitempty"`
 }
 
 type UserProfile struct {
@@ -172,4 +176,10 @@ type UserProfile struct {
 		RealName    string `json:"real_name"`
 		AvatarHash  string `json:"avatar_hash"`
 	} `json:"profile"`
+}
+
+type Emoji struct {
+	Name    string `json:"name"`
+	Url     string `json:"value"`
+	Updated int64  `json:"updated"`
 }

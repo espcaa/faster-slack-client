@@ -4,7 +4,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     height: 100%;
-    padding: 10px;
+    padding-bottom: 40px;
 }
 
 .loading {

@@ -1,0 +1,185 @@
+package store
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fastslack/shared"
+	"fmt"
+	"path/filepath"
+	"sync"
+	"time"
+
+	_ "modernc.org/sqlite"
+)
+
+var (
+	msgDB   *sql.DB
+	msgOnce sync.Once
+)
+
+func openMessageDB() (*sql.DB, error) {
+	var err error
+	msgOnce.Do(func() {
+		dbPath := filepath.Join(cacheDir(), "messages.db")
+		fmt.Println("DATABASE PATH:", dbPath)
+		msgDB, err = sql.Open("sqlite", dbPath)
+		if err != nil {
+			return
+		}
+		_, err = msgDB.Exec(`
+			PRAGMA journal_mode=WAL;
+			PRAGMA synchronous=NORMAL;
+
+			CREATE TABLE IF NOT EXISTS messages (
+    			team_id      TEXT NOT NULL,
+    			channel_id   TEXT NOT NULL,
+    			ts           TEXT NOT NULL,
+    			user         TEXT NOT NULL DEFAULT '',
+    			text         TEXT NOT NULL DEFAULT '',
+    			type         TEXT NOT NULL DEFAULT '',
+    			subtype      TEXT NOT NULL DEFAULT '',
+    			team         TEXT NOT NULL DEFAULT '',
+    			thread_ts    TEXT NOT NULL DEFAULT '',
+    			reply_count  INTEGER NOT NULL DEFAULT 0,
+    			latest_reply TEXT NOT NULL DEFAULT '',
+    			reply_users  TEXT NOT NULL DEFAULT '',   -- JSON-encoded []string
+    			PRIMARY KEY (team_id, channel_id, thread_ts, ts)
+    		);
+
+			CREATE INDEX IF NOT EXISTS idx_messages_channel
+				ON messages (team_id, channel_id, thread_ts, ts DESC);
+		`)
+	})
+	return msgDB, err
+}
+
+func encodeReplyUsers(users []string) string {
+	if len(users) == 0 {
+		return ""
+	}
+	b, _ := json.Marshal(users)
+	return string(b)
+}
+
+func decodeReplyUsers(s string) []string {
+	if s == "" {
+		return nil
+	}
+	var users []string
+	json.Unmarshal([]byte(s), &users)
+	return users
+}
+
+func InitMessageDB() error {
+	db, err := openMessageDB()
+	if err != nil {
+		return err
+	}
+
+	// remove messages older than 10 days
+	cutoff := fmt.Sprintf("%d", time.Now().AddDate(0, 0, -10).Unix())
+	_, _ = db.Exec(`DELETE FROM messages WHERE ts < ?`, cutoff)
+
+	return nil
+}
+
+func SaveMessages(teamID, channelID string, msgs []shared.Message) error {
+	db, err := openMessageDB()
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+    INSERT OR REPLACE INTO messages
+        (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, m := range msgs {
+		_, err := stmt.Exec(
+			teamID, channelID,
+			m.Ts, m.User, m.Text, m.Type, m.Subtype, m.Team, m.ThreadTs,
+			m.ReplyCount, m.LatestReply, encodeReplyUsers(m.ReplyUsers),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]shared.Message, error) {
+	db, err := openMessageDB()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.Query(`
+    SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users
+    FROM messages
+    WHERE team_id = ? AND channel_id = ? AND thread_ts = ?
+    ORDER BY ts DESC
+    LIMIT ?
+    `, teamID, channelID, threadTS, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var msgs []shared.Message
+	for rows.Next() {
+		var m shared.Message
+		if err := rows.Scan(&m.Ts, &m.User, &m.Text, &m.Type, &m.Subtype, &m.Team, &m.ThreadTs); err != nil {
+			return nil, err
+		}
+
+		var replyUsers string
+		if err := rows.Scan(
+			&m.Ts, &m.User, &m.Text, &m.Type, &m.Subtype, &m.Team, &m.ThreadTs,
+			&m.ReplyCount, &m.LatestReply, &replyUsers,
+		); err != nil {
+			return nil, err
+		}
+		m.ReplyUsers = decodeReplyUsers(replyUsers)
+
+		msgs = append(msgs, m)
+	}
+	return msgs, rows.Err()
+}
+
+func UpsertMessage(teamID, channelID string, msg shared.Message) error {
+	db, err := openMessageDB()
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`
+			INSERT OR REPLACE INTO messages (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, teamID, channelID, msg.Ts, msg.User, msg.Text, msg.Type, msg.Subtype, msg.Team, msg.ThreadTs)
+	return err
+}
+
+func DeleteMessage(teamID, channelID, threadTS, ts string) error {
+	db, err := openMessageDB()
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`
+			DELETE FROM messages
+			WHERE team_id = ? AND channel_id = ? AND thread_ts = ? AND ts = ?
+		`, teamID, channelID, threadTS, ts)
+	return err
+}

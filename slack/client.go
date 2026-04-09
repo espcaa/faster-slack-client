@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fastslack/shared"
@@ -125,6 +126,88 @@ func (c *Client) DoWithQuery(teamID string, method string, params url.Values, qu
 			return c.Do(teamID, method, params)
 		}
 		return nil, errors.New("slack api error: " + envelope.Error)
+	}
+
+	return body, nil
+}
+
+func (c *Client) DoEdge(teamID string, resource string, payload map[string]any) (json.RawMessage, error) {
+	ws, ok := c.Session.Workspaces[teamID]
+	if !ok {
+		return nil, errors.New("unknown workspace: " + teamID)
+	}
+
+	team := teamID
+	if ws.EnterpriseID != "" {
+		team = ws.EnterpriseID
+	}
+
+	payload["token"] = ws.Token
+	payload["enterprise_token"] = ws.Token
+	payload["_x_app_name"] = "client"
+	payload["fp"] = "60"
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	apiURL := "https://edgeapi.slack.com/cache/" + team + "/" + resource + "?_x_app_name=client&fp=60&_x_num_retries=0"
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = http.Header{
+		"content-type": {"application/json"},
+		"cookie":       {"d=" + c.Session.DCookie},
+		"user-agent":   {userAgent},
+		"origin":       {"https://app.slack.com"},
+		"accept":       {"*/*"},
+	}
+	req.Header[http.HeaderOrderKey] = []string{
+		"content-type",
+		"cookie",
+		"user-agent",
+		"origin",
+		"accept",
+	}
+
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 429 {
+		retryAfter, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
+		if retryAfter == 0 {
+			retryAfter = 5
+		}
+		time.Sleep(time.Duration(retryAfter) * time.Second)
+		return c.DoEdge(teamID, resource, payload)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var envelope struct {
+		OK    bool   `json:"ok"`
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return nil, err
+	}
+
+	if !envelope.OK {
+		if envelope.Error == "ratelimited" {
+			time.Sleep(5 * time.Second)
+			return c.DoEdge(teamID, resource, payload)
+		}
+		return nil, errors.New("slack edge api error: " + envelope.Error)
 	}
 
 	return body, nil

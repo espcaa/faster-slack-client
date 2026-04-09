@@ -5,12 +5,15 @@ import (
 	"fastslack/slack"
 	"fastslack/store"
 	"fmt"
+
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 type SlackService struct {
 	Client       *slack.Client
 	States       map[string]*store.WorkspaceState
-	UserProfiles map[string]shared.UserProfile
+	UserProfiles *lru.Cache[string, shared.UserProfile]
+	EmojiInfos   *lru.Cache[string, shared.Emoji]
 }
 
 func (s *SlackService) ResolveUsers(teamID string, userIDs []string) ([]shared.UserProfile, error) {
@@ -18,7 +21,7 @@ func (s *SlackService) ResolveUsers(teamID string, userIDs []string) ([]shared.U
 	var result []shared.UserProfile
 
 	for _, id := range userIDs {
-		if profile, ok := s.UserProfiles[id]; ok {
+		if profile, ok := s.UserProfiles.Get(id); ok {
 			result = append(result, profile)
 		} else {
 			missing = append(missing, id)
@@ -31,14 +34,43 @@ func (s *SlackService) ResolveUsers(teamID string, userIDs []string) ([]shared.U
 			return nil, err
 		}
 		for _, p := range fetched {
-			s.UserProfiles[p.ID] = p
+			s.UserProfiles.Add(p.ID, p)
 			result = append(result, p)
 		}
 	}
 	return result, nil
 }
 
+func (s *SlackService) ResolveEmojis(teamID string, names []string) ([]shared.Emoji, error) {
+	var missing []string
+	var result []shared.Emoji
+
+	for _, name := range names {
+		if emoji, ok := s.EmojiInfos.Get(name); ok {
+			result = append(result, emoji)
+		} else {
+			missing = append(missing, name)
+		}
+	}
+
+	if len(missing) > 0 {
+		fetched, err := s.Client.GetEmojisInfo(teamID, missing)
+		if err != nil {
+			return nil, err
+		}
+		for _, e := range fetched {
+			s.EmojiInfos.Add(e.Name, e)
+			result = append(result, e)
+		}
+	}
+	return result, nil
+}
+
 func (s *SlackService) Boot() error {
+	if err := store.InitMessageDB(); err != nil {
+		fmt.Printf("Failed to init message DB: %v\n", err)
+	}
+
 	if s.States == nil {
 		s.States = make(map[string]*store.WorkspaceState)
 	}
@@ -84,7 +116,13 @@ func (s *SlackService) Boot() error {
 		}
 
 		if s.UserProfiles == nil {
-			s.UserProfiles = make(map[string]shared.UserProfile)
+			userCache, _ := lru.New[string, shared.UserProfile](5000)
+			s.UserProfiles = userCache
+		}
+
+		if s.EmojiInfos == nil {
+			emojiCache, _ := lru.New[string, shared.Emoji](5000)
+			s.EmojiInfos = emojiCache
 		}
 
 		fmt.Printf("Booted %s: %d channels, %d IMs\n", teamID, len(state.Channels), len(state.IMs))
@@ -106,7 +144,20 @@ func (s *SlackService) GetChannels(teamID string) []shared.Channel {
 }
 
 func (s *SlackService) GetMessages(teamID, channelID, cursor string) (*shared.MessagesResponse, error) {
-	return s.Client.GetConversationMessages(teamID, channelID, cursor)
+	if cursor == "" {
+		cached, err := store.GetCachedMessages(teamID, channelID, "", 100)
+		if err == nil && len(cached) > 0 {
+			return &shared.MessagesResponse{Messages: cached}, nil
+		}
+	}
+
+	resp, err := s.Client.GetConversationMessages(teamID, channelID, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	go store.SaveMessages(teamID, channelID, resp.Messages)
+	return resp, nil
 }
 
 func (s *SlackService) GetIMs(teamID string) []shared.Im {
@@ -119,8 +170,4 @@ func (s *SlackService) GetIMs(teamID string) []shared.Im {
 		ims = append(ims, im)
 	}
 	return ims
-}
-
-func (s *SlackService) GetUserProfile(teamID, userID, hash string, size int) string {
-	return fmt.Sprintf("https://ca.slack-edge.com/%s-%s-%s-%d", teamID, userID, hash, size)
 }

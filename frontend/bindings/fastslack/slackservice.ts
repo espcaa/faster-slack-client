@@ -31,13 +31,15 @@ export function GetMessages(teamID: string, channelID: string, cursor: string): 
     });
 }
 
-export function GetUserProfile(teamID: string, userID: string, hash: string, size: number): $CancellablePromise<string> {
-    return $Call.ByID(4097267401, teamID, userID, hash, size);
+export function ResolveEmojis(teamID: string, names: string[]): $CancellablePromise<shared$0.Emoji[]> {
+    return $Call.ByID(1381900964, teamID, names).then(($result: any) => {
+        return $$createType7($result);
+    });
 }
 
 export function ResolveUsers(teamID: string, userIDs: string[]): $CancellablePromise<shared$0.UserProfile[]> {
     return $Call.ByID(2167812529, teamID, userIDs).then(($result: any) => {
-        return $$createType7($result);
+        return $$createType9($result);
     });
 }
 
@@ -48,5 +50,7 @@ const $$createType2 = shared$0.Im.createFrom;
 const $$createType3 = $Create.Array($$createType2);
 const $$createType4 = shared$0.MessagesResponse.createFrom;
 const $$createType5 = $Create.Nullable($$createType4);
-const $$createType6 = shared$0.UserProfile.createFrom;
+const $$createType6 = shared$0.Emoji.createFrom;
 const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = shared$0.UserProfile.createFrom;
+const $$createType9 = $Create.Array($$createType8);
