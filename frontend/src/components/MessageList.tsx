@@ -7,6 +7,7 @@ import {
 } from "../../bindings/fastslack/slackservice";
 import MessageItem from "./MessageItem";
 import { chatStore, setChatStore, scrollPositions } from "../ChatStore";
+import SlickScrollbar from "./misc/Scrollbar";
 
 export default function MessageList(props: {
   teamID: string;
@@ -14,7 +15,7 @@ export default function MessageList(props: {
 }) {
   let containerRef!: HTMLDivElement;
   let switchingChannel = false;
-  const [loading, setLoading] = createSignal(false);
+  const [_, setLoading] = createSignal(false);
   const [fetchingOlder, setFetchingOlder] = createSignal(false);
   const [profiles, setProfiles] = createSignal<Record<string, UserProfile>>({});
 
@@ -38,6 +39,19 @@ export default function MessageList(props: {
         nextCursor: res.next_cursor || null,
       });
       fetchProfiles(res.messages);
+
+      // Cache is stale (no websocket updates while closed), so always
+      // refresh from the API in the background after showing cached data.
+      if (res.next_cursor === "cache") {
+        const fresh = await GetMessages(props.teamID, id, "cache");
+        if (fresh) {
+          setChatStore({
+            messages: [...fresh.messages],
+            nextCursor: fresh.next_cursor || null,
+          });
+          fetchProfiles(fresh.messages);
+        }
+      }
     }
     setLoading(false);
   };
@@ -94,42 +108,43 @@ export default function MessageList(props: {
   };
 
   return (
-    <div class={styles.list} ref={containerRef} onScroll={handleScroll}>
-      <Show when={loading()}>
-        <div class={styles.loading}>Loading history...</div>
-      </Show>
+    <div class={styles.listWrapper}>
+      <div class={styles.list} ref={containerRef} onScroll={handleScroll}>
+        <For each={messages()}>
+          {(msg, i) => {
+            const nextOlder = () => messages()[i() + 1];
+            const showHeader = () => {
+              if (!nextOlder()) return true;
 
-      <For each={messages()}>
-        {(msg, i) => {
-          const nextOlder = () => messages()[i() + 1];
-          const showHeader = () => {
-            if (!nextOlder()) return true;
+              if (nextOlder().user !== msg.user) return true;
 
-            if (nextOlder().user !== msg.user) return true;
+              const diff = parseFloat(msg.ts) - parseFloat(nextOlder().ts);
+              return diff > 180;
+            };
+            return (
+              <MessageItem
+                message={msg}
+                profile={profiles()[msg.user]}
+                showUser={showHeader()}
+                workspaceID={props.teamID}
+                onThreadClick={(message) =>
+                  setChatStore({
+                    threadTS: message.thread_ts || message.ts,
+                    threadParent: message,
+                  })
+                }
+                showThreadButton={true}
+              />
+            );
+          }}
+        </For>
 
-            const diff = parseFloat(msg.ts) - parseFloat(nextOlder().ts);
-            return diff > 180;
-          };
-          return (
-            <MessageItem
-              message={msg}
-              profile={profiles()[msg.user]}
-              showUser={showHeader()}
-              workspaceID={props.teamID}
-              onThreadClick={(message) =>
-                setChatStore({
-                  threadTS: message.thread_ts || message.ts,
-                  threadParent: message,
-                })
-              }
-              showThreadButton={true}
-            />
-          );
-        }}
-      </For>
-
-      <Show when={fetchingOlder()}>
-        <div class={styles.loading}>Fetching older messages...</div>
+        <Show when={fetchingOlder()}>
+          <div class={styles.loading}>Fetching older messages...</div>
+        </Show>
+      </div>
+      <Show when={containerRef}>
+        <SlickScrollbar container={containerRef} reversed />
       </Show>
     </div>
   );

@@ -1,6 +1,7 @@
 import { createEffect, createSignal, For, on, Show } from "solid-js";
 import styles from "./MessageList.module.css";
 import threadStyles from "./ThreadView.module.css";
+import Scrollbar from "./misc/Scrollbar";
 import { Message, UserProfile } from "../../bindings/fastslack/shared";
 import {
   GetThreadMessages,
@@ -47,6 +48,24 @@ export default function ThreadView(props: {
       setReplies(res.messages);
       setNextCursor(res.next_cursor || null);
       fetchProfiles(res.messages);
+
+      if (res.next_cursor === "cache") {
+        const fresh = await GetThreadMessages(
+          props.teamID,
+          props.channelID,
+          threadTS(),
+          "cache",
+        );
+        if (fresh) {
+          setReplies((prev) => {
+            const existingTs = new Set(prev.map((m) => m.ts));
+            const newMsgs = res.messages.filter((m) => !existingTs.has(m.ts));
+            return [...prev, ...newMsgs];
+          });
+          setNextCursor(fresh.next_cursor || null);
+          fetchProfiles(fresh.messages);
+        }
+      }
     }
     setLoading(false);
     requestAnimationFrame(() => {
@@ -106,48 +125,52 @@ export default function ThreadView(props: {
           ✕
         </button>
       </div>
-      <div class={threadStyles.list} ref={containerRef} onScroll={handleScroll}>
-        <Show when={loading()}>
-          <div class={styles.loading}>Loading thread...</div>
-        </Show>
+      <div class={threadStyles.listWrapper}>
+        <div class={threadStyles.list} ref={containerRef} onScroll={handleScroll}>
+          <Show when={loading()}>
+            <div class={styles.loading}>Loading thread...</div>
+          </Show>
 
-        <For each={replies()}>
-          {(msg, i) => {
-            const prev = () => replies()[i() - 1];
-            const showHeader = () => {
-              if (!prev()) return true;
-              if (prev().user !== msg.user) return true;
-              const diff = parseFloat(msg.ts) - parseFloat(prev().ts);
-              return diff > 180;
-            };
-            // if the msg is the original parent, append a little line + number of replies
+          <For each={replies()}>
+            {(msg, i) => {
+              const prev = () => replies()[i() - 1];
+              const showHeader = () => {
+                if (!prev()) return true;
+                if (prev().user !== msg.user) return true;
+                const diff = parseFloat(msg.ts) - parseFloat(prev().ts);
+                return diff > 180;
+              };
 
-            return (
-              <>
-                <MessageItem
-                  message={msg}
-                  profile={profiles()[msg.user]}
-                  showUser={showHeader()}
-                  workspaceID={props.teamID}
-                  showThreadButton={false}
-                />
-                <Show when={i() === 0 && replies().length > 1}>
-                  <div class={threadStyles.replyDivider}>
-                    <span class={threadStyles.replyCount}>
-                      {replies().length - 1}{" "}
-                      {replies().length - 1 === 1 ? "reply" : "replies"}
-                    </span>
-                    <div class={threadStyles.dividerLine} />
-                  </div>
-                </Show>
-              </>
-            );
-          }}
-        </For>
+              return (
+                <>
+                  <MessageItem
+                    message={msg}
+                    profile={profiles()[msg.user]}
+                    showUser={showHeader()}
+                    workspaceID={props.teamID}
+                    showThreadButton={false}
+                  />
+                  <Show when={i() === 0 && replies().length > 1}>
+                    <div class={threadStyles.replyDivider}>
+                      <span class={threadStyles.replyCount}>
+                        {props.parentMessage.reply_count || 0 - 1}{" "}
+                        {props.parentMessage.reply_count || 0 - 1 === 1
+                          ? "reply"
+                          : "replies"}
+                      </span>
+                      <div class={threadStyles.dividerLine} />
+                    </div>
+                  </Show>
+                </>
+              );
+            }}
+          </For>
 
-        <Show when={fetchingOlder()}>
-          <div class={styles.loading}>Loading more...</div>
-        </Show>
+          <Show when={fetchingOlder()}>
+            <div class={styles.loading}>Loading more...</div>
+          </Show>
+        </div>
+        <Scrollbar container={containerRef} />
       </div>
     </div>
   );

@@ -181,7 +181,7 @@ func (c *SlackService) GetThreadMessages(teamID, channelID, threadTS, cursor str
 		cached, err := store.GetCachedMessages(teamID, channelID, threadTS, 100)
 		// only use cache if we have more than just the parent message
 		if err == nil && len(cached) > 1 {
-			return &shared.MessagesResponse{Messages: cached, HasMore: true, NextCursor: "cache"}, nil
+			return &shared.MessagesResponse{Messages: cached, HasMore: false, NextCursor: "cache"}, nil
 		}
 	}
 

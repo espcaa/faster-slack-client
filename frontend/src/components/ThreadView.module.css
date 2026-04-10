@@ -37,13 +37,25 @@
     color: var(--color-ink);
 }
 
+.listWrapper {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
 .list {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-    flex: 1;
+    height: 100%;
     padding-bottom: 40px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.list::-webkit-scrollbar {
+    display: none;
 }
 
 .replyDivider {
