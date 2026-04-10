@@ -6,6 +6,13 @@ interface ChatState {
   nextCursor: string | null;
   threadTS: string | null;
   threadParent: Message | null;
+  openThreads: Record<
+    string,
+    {
+      threadTs: string;
+      threadParent: Message;
+    }
+  >;
 }
 
 export const [chatStore, setChatStore] = createStore<ChatState>({
@@ -13,6 +20,7 @@ export const [chatStore, setChatStore] = createStore<ChatState>({
   nextCursor: null,
   threadTS: null,
   threadParent: null,
+  openThreads: {},
 });
 
 export const scrollPositions = new Map<string, number>();

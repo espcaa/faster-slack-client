@@ -4,7 +4,7 @@ import { GetChannels, GetIMs } from "../../bindings/fastslack/slackservice";
 import styles from "./Home.module.css";
 import { Logout } from "../../bindings/fastslack/slackauthservice";
 import MessageList from "../components/MessageList";
-import { chatStore } from "../ChatStore";
+import { chatStore, setChatStore } from "../ChatStore";
 import ThreadView from "../components/ThreadView";
 
 export default function Home() {
@@ -42,7 +42,19 @@ export default function Home() {
             {(ch) => (
               <div
                 class={styles.item}
-                onClick={() => setSelectedChannel(ch.id)}
+                onClick={() => {
+                  setSelectedChannel(ch.id);
+
+                  if (chatStore.openThreads[ch.id]) {
+                    setChatStore({
+                      threadParent: chatStore.openThreads[ch.id].threadParent,
+                    });
+                  } else {
+                    setChatStore({
+                      threadParent: null,
+                    });
+                  }
+                }}
               >
                 <span class={styles.hash}>#</span>
                 {ch.name}
@@ -60,7 +72,19 @@ export default function Home() {
             {(im) => (
               <div
                 class={styles.item}
-                onClick={() => setSelectedChannel(im.id)}
+                onClick={() => {
+                  setSelectedChannel(im.id);
+
+                  if (chatStore.openThreads[im.id]) {
+                    setChatStore({
+                      threadParent: chatStore.openThreads[im.id].threadParent,
+                    });
+                  } else {
+                    setChatStore({
+                      threadParent: null,
+                    });
+                  }
+                }}
               >
                 {im.user}
               </div>

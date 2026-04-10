@@ -120,13 +120,20 @@ export default function ThreadView(props: {
         <span class={threadStyles.title}>Thread</span>
         <button
           class={threadStyles.close}
-          onClick={() => setChatStore({ threadTS: null, threadParent: null })}
+          onClick={() => {
+            setChatStore("openThreads", props.channelID, undefined!);
+            setChatStore({ threadTS: null, threadParent: null });
+          }}
         >
           ✕
         </button>
       </div>
       <div class={threadStyles.listWrapper}>
-        <div class={threadStyles.list} ref={containerRef} onScroll={handleScroll}>
+        <div
+          class={threadStyles.list}
+          ref={containerRef}
+          onScroll={handleScroll}
+        >
           <Show when={loading()}>
             <div class={styles.loading}>Loading thread...</div>
           </Show>

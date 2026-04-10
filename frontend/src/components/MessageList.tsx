@@ -131,6 +131,13 @@ export default function MessageList(props: {
                   setChatStore({
                     threadTS: message.thread_ts || message.ts,
                     threadParent: message,
+                    openThreads: {
+                      ...chatStore.openThreads,
+                      [props.channelID]: {
+                        threadTs: message.thread_ts || message.ts,
+                        threadParent: message,
+                      },
+                    },
                   })
                 }
                 showThreadButton={true}

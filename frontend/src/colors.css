@@ -39,6 +39,7 @@
         var(--c3-yellow) 15%,
         var(--color-canvas)
     );
+    --color-primary-surface: var(--c3-yellow);
 }
 
 @media (prefers-color-scheme: light) {
