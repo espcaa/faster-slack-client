@@ -5,6 +5,10 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as json$0 from "../../encoding/json/models.js";
+
 export class Channel {
     "id": string;
     "name": string;
@@ -184,6 +188,7 @@ export class Message {
     "reply_count"?: number;
     "latest_reply"?: string;
     "reply_users"?: string[];
+    "blocks"?: json$0.RawMessage;
 
     /** Creates a new Message instance. */
     constructor($$source: Partial<Message> = {}) {

@@ -6,6 +6,7 @@ import type {
 import styles from "./MessageItem.module.css";
 import ClankerChip from "./misc/ClankerChip";
 import ThreadRepliesButton from "./misc/ThreadRepliesButton";
+import BlockKitRenderer from "../blockkit/BlockKitRenderer";
 
 export default function MessageItem(props: {
   message: Message;
@@ -66,7 +67,9 @@ export default function MessageItem(props: {
             </Show>
           </div>
         </Show>
-        <span class={styles.text}>{props.message.text}</span>
+        <div class={styles.text}>
+          <BlockKitRenderer blocks={props.message.blocks} />
+        </div>
         <Show
           when={
             props.message.reply_count &&

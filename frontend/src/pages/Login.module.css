@@ -1,8 +1,6 @@
 .layout {
     display: flex;
     min-height: 100dvh;
-    margin-top: calc(-1 * var(--titlebar-height));
-    margin-top: var(--titlebar-height);
 }
 
 .sidebar {

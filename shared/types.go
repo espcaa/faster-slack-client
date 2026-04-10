@@ -1,5 +1,7 @@
 package shared
 
+import "encoding/json"
+
 type Cookie struct {
 	Name   string `json:"name"`
 	Value  string `json:"value"`
@@ -155,16 +157,17 @@ type MessagesResponse struct {
 }
 
 type Message struct {
-	User        string   `json:"user"`
-	Text        string   `json:"text"`
-	Ts          string   `json:"ts"`
-	Type        string   `json:"type"`
-	Subtype     string   `json:"subtype,omitempty"`
-	Team        string   `json:"team,omitempty"`
-	ThreadTs    string   `json:"thread_ts,omitempty"`
-	ReplyCount  int      `json:"reply_count,omitempty"`
-	LatestReply string   `json:"latest_reply,omitempty"`
-	ReplyUsers  []string `json:"reply_users,omitempty"`
+	User        string          `json:"user"`
+	Text        string          `json:"text"`
+	Ts          string          `json:"ts"`
+	Type        string          `json:"type"`
+	Subtype     string          `json:"subtype,omitempty"`
+	Team        string          `json:"team,omitempty"`
+	ThreadTs    string          `json:"thread_ts,omitempty"`
+	ReplyCount  int             `json:"reply_count,omitempty"`
+	LatestReply string          `json:"latest_reply,omitempty"`
+	ReplyUsers  []string        `json:"reply_users,omitempty"`
+	Blocks      json.RawMessage `json:"blocks,omitempty"`
 }
 
 type UserProfile struct {

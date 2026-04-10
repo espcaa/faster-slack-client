@@ -1,0 +1,8 @@
+.userChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 4px;
+    background-color: var(--color-primary);
+    border-radius: 4px;
+    color: var(--color-canvas);
+}

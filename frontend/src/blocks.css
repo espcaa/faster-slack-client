@@ -1,0 +1,6 @@
+blockquote {
+    margin: 4px 0;
+    padding: 2px 0 2px 8px;
+    border-left: 4px solid var(--color-border, #ddd);
+    color: var(--color-ink-muted, inherit);
+}
