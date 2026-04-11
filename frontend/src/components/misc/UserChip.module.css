@@ -6,3 +6,7 @@
     border-radius: 4px;
     color: var(--color-canvas);
 }
+
+.userChip:hover {
+    background-color: var(--color-primary-hover);
+}

@@ -19,12 +19,12 @@
 
     --color-ink: var(--c15-bright-white);
     --color-ink-muted: var(--c8-bright-black);
-    --color-canvas: var(--c0-black);
-    --color-canvas-raised: oklch(25% 0.01 70);
-    --color-canvas-sunken: oklch(17% 0.01 70);
+    --color-canvas: oklch(15% 0.005 260);
+    --color-canvas-raised: oklch(20% 0.005 260);
+    --color-canvas-sunken: oklch(12% 0.005 260);
 
-    --color-border: oklch(30% 0.01 70);
-    --color-border-subtle: oklch(25% 0.01 70);
+    --color-border: oklch(25% 0.01 260 / 0.6);
+    --color-border-subtle: oklch(20% 0.01 260 / 0.6);
 
     --color-link: var(--c12-bright-blue);
     --color-positive: var(--c10-bright-green);
@@ -33,7 +33,12 @@
     --color-accent: var(--c3-yellow);
 
     --color-primary: var(--c3-yellow);
-    --color-primary-hover: var(--c11-bright-yellow);
+    --color-primary-ghost: color-mix(
+        in oklch,
+        var(--color-primary) 12%,
+        transparent
+    );
+    --color-primary-hover: color-mix(in oklch, var(--color-primary), white 10%);
     --color-primary-muted: color-mix(
         in oklch,
         var(--c3-yellow) 15%,

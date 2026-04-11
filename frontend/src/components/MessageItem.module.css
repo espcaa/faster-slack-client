@@ -2,8 +2,7 @@
     min-width: 0;
     overflow-wrap: break-word;
     word-break: break-word;
-    padding-left: 20px;
-    padding-right: 20px;
+    padding: 4px 20px;
     display: flex;
     gap: 12px;
     flex-direction: row;
@@ -11,7 +10,7 @@
 }
 
 .groupStart {
-    margin-top: 16px;
+    margin-top: 10px;
 }
 
 .message:hover {

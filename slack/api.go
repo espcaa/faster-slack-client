@@ -65,7 +65,12 @@ func (c *Client) GetConversationMessages(teamID, channelID, cursor string) (*sha
 func (c *Client) GetUserProfiles(teamID string, userIDs []string) ([]shared.UserProfile, error) {
 	updatedIds := make(map[string]int64)
 	for _, id := range userIDs {
-		updatedIds[id] = 0
+		if id != "" {
+			updatedIds[id] = 0
+		}
+	}
+	if len(updatedIds) == 0 {
+		return nil, nil
 	}
 
 	raw, err := c.DoEdge(teamID, "users/info", map[string]any{
@@ -87,9 +92,13 @@ func (c *Client) GetUserProfiles(teamID string, userIDs []string) ([]shared.User
 	return result.Results, nil
 }
 
-func (c *Client) GetEmojisInfo(teamID string, names []string) ([]shared.Emoji, error) {
+func (c *Client) GetEmojisInfo(teamID string, updatedIDs map[string]int64) ([]shared.Emoji, error) {
+	if len(updatedIDs) == 0 {
+		return nil, nil
+	}
+
 	raw, err := c.DoEdge(teamID, "emojis/info", map[string]any{
-		"names": names,
+		"updated_ids": updatedIDs,
 	})
 	if err != nil {
 		return nil, err

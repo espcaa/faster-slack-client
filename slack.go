@@ -42,26 +42,28 @@ func (s *SlackService) ResolveUsers(teamID string, userIDs []string) ([]shared.U
 }
 
 func (s *SlackService) ResolveEmojis(teamID string, names []string) ([]shared.Emoji, error) {
-	var missing []string
+	updatedIDs := make(map[string]int64, len(names))
 	var result []shared.Emoji
 
 	for _, name := range names {
+		if name == "" {
+			continue
+		}
 		if emoji, ok := s.EmojiInfos.Get(name); ok {
+			updatedIDs[name] = emoji.Updated
 			result = append(result, emoji)
 		} else {
-			missing = append(missing, name)
+			updatedIDs[name] = 0
 		}
 	}
 
-	if len(missing) > 0 {
-		fetched, err := s.Client.GetEmojisInfo(teamID, missing)
-		if err != nil {
-			return nil, err
-		}
-		for _, e := range fetched {
-			s.EmojiInfos.Add(e.Name, e)
-			result = append(result, e)
-		}
+	fetched, err := s.Client.GetEmojisInfo(teamID, updatedIDs)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range fetched {
+		s.EmojiInfos.Add(e.Name, e)
+		result = append(result, e)
 	}
 	return result, nil
 }

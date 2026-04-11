@@ -1,5 +1,6 @@
 import { For, Match, Switch, type JSX } from "solid-js";
 import UserChip from "../../components/misc/UserChip";
+import EmojiComponent from "../../components/misc/Emoji";
 
 type RichTextStyle = {
   bold?: boolean;
@@ -9,6 +10,18 @@ type RichTextStyle = {
   underline?: boolean;
   highlight?: boolean;
 };
+
+function isOnlyEmoji(elements: RichTextSubElement[]): boolean {
+  if (elements.length !== 1 || elements[0].type !== "rich_text_section")
+    return false;
+
+  const section = elements[0];
+  return (
+    section.elements.length > 0 &&
+    section.elements.length <= 10 &&
+    section.elements.every((el) => el.type === "emoji")
+  );
+}
 
 type RichTextElement =
   | { type: "text"; text: string; style?: RichTextStyle }
@@ -68,7 +81,10 @@ function applyStyle(node: JSX.Element, style?: RichTextStyle): JSX.Element {
   return n;
 }
 
-function RichTextElementView(props: { el: RichTextElement }) {
+function RichTextElementView(props: {
+  el: RichTextElement;
+  isOnlyEmoji?: boolean;
+}) {
   return (
     <Switch fallback={null}>
       <Match when={props.el.type === "text" && props.el}>
@@ -98,7 +114,9 @@ function RichTextElementView(props: { el: RichTextElement }) {
               ...e.unicode.split("-").map((cp) => parseInt(cp, 16)),
             );
           }
-          return <>:{e.name}:</>;
+          return (
+            <EmojiComponent name={e.name} bigVersion={props.isOnlyEmoji} />
+          );
         }}
       </Match>
       <Match when={props.el.type === "user" && props.el}>
@@ -157,9 +175,7 @@ function RichTextElementView(props: { el: RichTextElement }) {
           const e = el() as Extract<RichTextElement, { type: "date" }>;
           const formatted = new Date(e.timestamp * 1000).toLocaleDateString();
           const node = e.url ? (
-            <a href={e.url} target="_blank" rel="noopener noreferrer">
-              {formatted}
-            </a>
+            <a href={e.url}>{formatted}</a>
           ) : (
             <>{formatted}</>
           );
@@ -170,15 +186,22 @@ function RichTextElementView(props: { el: RichTextElement }) {
   );
 }
 
-function SectionElements(props: { elements: RichTextElement[] }) {
+function SectionElements(props: {
+  elements: RichTextElement[];
+  isOnlyEmoji?: boolean;
+}) {
   return (
-    <For each={props.elements}>{(el) => <RichTextElementView el={el} />}</For>
+    <For each={props.elements}>
+      {(el) => <RichTextElementView el={el} isOnlyEmoji={props.isOnlyEmoji} />}
+    </For>
   );
 }
 
 export default function RichTextBlock(props: {
   block: { elements: RichTextSubElement[] };
 }) {
+  const onlyEmoji = isOnlyEmoji(props.block.elements);
+
   return (
     <div style={{ "white-space": "pre-wrap" }}>
       <For each={props.block.elements}>
@@ -195,6 +218,7 @@ export default function RichTextBlock(props: {
                       >
                     ).elements
                   }
+                  isOnlyEmoji={onlyEmoji}
                 />
               </span>
             </Match>
@@ -209,6 +233,7 @@ export default function RichTextBlock(props: {
                       >
                     ).elements
                   }
+                  isOnlyEmoji={onlyEmoji}
                 />
               </pre>
             </Match>

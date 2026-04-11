@@ -27,7 +27,8 @@ export default function ThreadView(props: {
   const threadTS = () => props.parentMessage.ts;
 
   const fetchProfiles = async (msgs: Message[]) => {
-    const userIDs = [...new Set(msgs.map((m) => m.user))];
+    const userIDs = [...new Set(msgs.map((m) => m.user).filter(Boolean))];
+    if (!userIDs.length) return;
     const resolved = await ResolveUsers(props.teamID, userIDs);
     const profileMap: Record<string, UserProfile> = {};
     for (const p of resolved) profileMap[p.id] = p;
