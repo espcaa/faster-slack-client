@@ -5,6 +5,7 @@ import (
 	"fastslack/slack"
 	"fastslack/store"
 	"fmt"
+	"log"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 )
@@ -70,7 +71,7 @@ func (s *SlackService) ResolveEmojis(teamID string, names []string) ([]shared.Em
 
 func (s *SlackService) Boot() error {
 	if err := store.InitMessageDB(); err != nil {
-		fmt.Printf("Failed to init message DB: %v\n", err)
+		log.Printf("Failed to init message DB: %v\n", err)
 	}
 
 	if s.States == nil {
@@ -82,11 +83,11 @@ func (s *SlackService) Boot() error {
 		if err != nil {
 			return fmt.Errorf("auth.test failed for %s: %w", teamID, err)
 		}
-		fmt.Printf("auth.test for %s: %s\n", teamID, string(authResp))
+		log.Printf("auth.test for %s: %s\n", teamID, string(authResp))
 
 		cached, err := store.LoadWorkspace(teamID)
 		if err != nil {
-			fmt.Printf("Failed to load cache for %s: %v\n", teamID, err)
+			log.Printf("Failed to load cache for %s: %v\n", teamID, err)
 		}
 
 		var minChannelUpdated int64
@@ -110,7 +111,7 @@ func (s *SlackService) Boot() error {
 		s.States[teamID] = state
 
 		if err := store.SaveWorkspace(teamID, state); err != nil {
-			fmt.Printf("Failed to save cache for %s: %v\n", teamID, err)
+			log.Printf("Failed to save cache for %s: %v\n", teamID, err)
 		}
 
 		if s.States == nil {
@@ -127,7 +128,12 @@ func (s *SlackService) Boot() error {
 			s.EmojiInfos = emojiCache
 		}
 
-		fmt.Printf("Booted %s: %d channels, %d IMs\n", teamID, len(state.Channels), len(state.IMs))
+		// connect to websockets!!
+		_, err = s.Client.ConnectRTM(teamID, s.handleRTMEvent)
+		if err != nil {
+			log.Printf("Failed to connect websocket for %s: %v\n", teamID, err)
+		}
+		log.Printf("Booted %s: %d channels, %d IMs\n", teamID, len(state.Channels), len(state.IMs))
 	}
 
 	return nil

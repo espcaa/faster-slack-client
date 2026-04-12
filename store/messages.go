@@ -42,6 +42,7 @@ func openMessageDB() (*sql.DB, error) {
     			latest_reply TEXT NOT NULL DEFAULT '',
     			reply_users  TEXT NOT NULL DEFAULT '',   -- JSON-encoded []string
     			blocks       TEXT NOT NULL DEFAULT '',   -- raw JSON passthrough
+    			edited       TEXT NOT NULL DEFAULT '',
     			PRIMARY KEY (team_id, channel_id, thread_ts, ts)
     		);
 
@@ -75,9 +76,6 @@ func InitMessageDB() error {
 		return err
 	}
 
-	// migrate: add blocks column if missing
-	_, _ = db.Exec(`ALTER TABLE messages ADD COLUMN blocks TEXT NOT NULL DEFAULT ''`)
-
 	// clear all cached messages on startup — the cache is session-only
 	// because we miss websocket events between sessions
 	_, _ = db.Exec(`DELETE FROM messages`)
@@ -99,8 +97,8 @@ func SaveMessages(teamID, channelID string, msgs []shared.Message) error {
 
 	stmt, err := tx.Prepare(`
     INSERT OR REPLACE INTO messages
-        (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 	if err != nil {
 		return err
@@ -111,7 +109,7 @@ func SaveMessages(teamID, channelID string, msgs []shared.Message) error {
 		_, err := stmt.Exec(
 			teamID, channelID,
 			m.Ts, m.User, m.Text, m.Type, m.Subtype, m.Team, m.ThreadTs,
-			m.ReplyCount, m.LatestReply, encodeReplyUsers(m.ReplyUsers), string(m.Blocks),
+			m.ReplyCount, m.LatestReply, encodeReplyUsers(m.ReplyUsers), string(m.Blocks), string(m.Edited),
 		)
 		if err != nil {
 			return err
@@ -130,7 +128,7 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 	var rows *sql.Rows
 	if threadTS == "" {
 		rows, err = db.Query(`
-		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks
+		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited
 		FROM messages
 		WHERE team_id = ? AND channel_id = ? AND (thread_ts = '' OR thread_ts = ts)
 		ORDER BY ts DESC
@@ -138,7 +136,7 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 		`, teamID, channelID, limit)
 	} else {
 		rows, err = db.Query(`
-		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks
+		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited
 		FROM messages
 		WHERE team_id = ? AND channel_id = ? AND thread_ts = ?
 		ORDER BY ts ASC
@@ -153,16 +151,19 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 	var msgs []shared.Message
 	for rows.Next() {
 		var m shared.Message
-		var replyUsers, blocks string
+		var replyUsers, blocks, edited string
 		if err := rows.Scan(
 			&m.Ts, &m.User, &m.Text, &m.Type, &m.Subtype, &m.Team, &m.ThreadTs,
-			&m.ReplyCount, &m.LatestReply, &replyUsers, &blocks,
+			&m.ReplyCount, &m.LatestReply, &replyUsers, &blocks, &edited,
 		); err != nil {
 			return nil, err
 		}
 		m.ReplyUsers = decodeReplyUsers(replyUsers)
 		if blocks != "" {
 			m.Blocks = json.RawMessage(blocks)
+		}
+		if edited != "" {
+			m.Edited = json.RawMessage(edited)
 		}
 		msgs = append(msgs, m)
 	}
@@ -176,10 +177,10 @@ func UpsertMessage(teamID, channelID string, msg shared.Message) error {
 	}
 
 	_, err = db.Exec(`
-			INSERT OR REPLACE INTO messages (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT OR REPLACE INTO messages (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, teamID, channelID, msg.Ts, msg.User, msg.Text, msg.Type, msg.Subtype, msg.Team, msg.ThreadTs,
-		msg.ReplyCount, msg.LatestReply, encodeReplyUsers(msg.ReplyUsers), string(msg.Blocks))
+		msg.ReplyCount, msg.LatestReply, encodeReplyUsers(msg.ReplyUsers), string(msg.Blocks), string(msg.Edited))
 	return err
 }
 

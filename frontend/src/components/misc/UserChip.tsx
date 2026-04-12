@@ -1,33 +1,42 @@
-import { createResource, Show } from "solid-js";
+import { createSignal, createEffect, Show } from "solid-js";
 import { useAuth } from "../../AuthContext";
 import styles from "./UserChip.module.css";
-import { ResolveUsers } from "../../../bindings/fastslack/slackservice";
+import { resolveUser, getCachedUser } from "../../utils/userResolver";
+import UserProfileCardTrigger from "./UserProfileCardTrigger";
+import type { UserProfile } from "../../../bindings/fastslack/shared";
 
 function UserChip(props: { userID: string }) {
   const { workspace } = useAuth();
 
-  const [user] = createResource(
-    () => ({ ws: workspace(), id: props.userID }),
-    async ({ ws, id }) => {
-      if (!ws) return null;
-      try {
-        const res = await ResolveUsers(ws, [id]);
-        return res ? res[0] : null;
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
-        return null;
-      }
-    },
+  const ws = workspace();
+  const [user, setUser] = createSignal<UserProfile | null>(
+    ws ? getCachedUser(ws, props.userID) : null,
   );
 
+  createEffect(() => {
+    const ws = workspace();
+    if (!ws) return;
+    if (user()) return;
+    resolveUser(ws, props.userID).then((p) => {
+      if (p) setUser(p);
+    });
+  });
+
   return (
-    <span class={styles.userChip}>
-      <span class={styles.name}>
-        <Show when={!user.loading} fallback={"Loading"}>
-          @{user()?.profile.display_name || "Unknown User"}
-        </Show>
-      </span>
-    </span>
+    <Show
+      when={user()}
+      fallback={<span class={styles.userChip}>@Loading...</span>}
+    >
+      {(u) => (
+        <UserProfileCardTrigger workspaceID={workspace()!} profile={u()}>
+          <span class={styles.userChip}>
+            <span class={styles.name}>
+              @{u().profile.display_name || u().profile.real_name || "Unknown"}
+            </span>
+          </span>
+        </UserProfileCardTrigger>
+      )}
+    </Show>
   );
 }
 

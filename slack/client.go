@@ -14,14 +14,16 @@ import (
 	"time"
 
 	http "github.com/bogdanfinn/fhttp"
+	"github.com/coder/websocket"
 
 	tls_client "github.com/bogdanfinn/tls-client"
 	"github.com/bogdanfinn/tls-client/profiles"
 )
 
 type Client struct {
-	Session *shared.SlackSession
-	HTTP    tls_client.HttpClient
+	Session              *shared.SlackSession
+	HTTP                 tls_client.HttpClient
+	WebsocketConnections map[string]*websocket.Conn
 }
 
 func NewClient(session *shared.SlackSession) *Client {

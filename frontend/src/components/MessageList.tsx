@@ -1,10 +1,19 @@
-import { createEffect, createSignal, For, on, Show } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import styles from "./MessageList.module.css";
 import { Message, UserProfile } from "../../bindings/fastslack/shared";
 import {
   GetMessages,
   ResolveUsers,
 } from "../../bindings/fastslack/slackservice";
+import { Events } from "@wailsio/runtime";
 import MessageItem from "./MessageItem";
 import { chatStore, setChatStore, scrollPositions } from "../ChatStore";
 import SlickScrollbar from "./misc/Scrollbar";
@@ -107,6 +116,43 @@ export default function MessageList(props: {
       loadOlderMessages();
     }
   };
+
+  onMount(() => {
+    const offMessage = Events.On("slack:message", (event: any) => {
+      const data =
+        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID) return;
+      console.log("New message event received", data);
+      const msg = data as Message;
+      setChatStore("messages", (prev) => [msg, ...prev]);
+      fetchProfiles([msg]);
+    });
+
+    const offChanged = Events.On("slack:message_changed", (event: any) => {
+      const data =
+        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID) return;
+
+      const updated = data.message as Message;
+      setChatStore("messages", (m) => m.ts === updated.ts, updated);
+    });
+
+    const offDeleted = Events.On("slack:message_deleted", (event: any) => {
+      const data =
+        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID) return;
+
+      setChatStore("messages", (prev) =>
+        prev.filter((m) => m.ts !== data.deleted_ts),
+      );
+    });
+
+    onCleanup(() => {
+      offMessage();
+      offChanged();
+      offDeleted();
+    });
+  });
 
   return (
     <div class={styles.listWrapper}>

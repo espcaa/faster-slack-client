@@ -27,6 +27,7 @@ func (c *Client) UserBoot(teamID string, minChannelUpdated int64) (*shared.Userb
 		return nil, err
 	}
 	return &resp, nil
+
 }
 
 func (c *Client) GetConversationMessages(teamID, channelID, cursor string) (*shared.MessagesResponse, error) {

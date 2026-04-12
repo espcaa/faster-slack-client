@@ -6,6 +6,7 @@ require (
 	github.com/adrg/xdg v0.5.3
 	github.com/bogdanfinn/fhttp v0.6.8
 	github.com/bogdanfinn/tls-client v1.14.0
+	github.com/coder/websocket v1.8.14
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
@@ -25,7 +26,6 @@ require (
 	github.com/bogdanfinn/utls v1.7.7-barnius // indirect
 	github.com/bogdanfinn/websocket v1.5.5-barnius // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
-	github.com/coder/websocket v1.8.14 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

@@ -189,6 +189,7 @@ export class Message {
     "latest_reply"?: string;
     "reply_users"?: string[];
     "blocks"?: json$0.RawMessage;
+    "edited"?: json$0.RawMessage;
 
     /** Creates a new Message instance. */
     constructor($$source: Partial<Message> = {}) {
@@ -324,7 +325,10 @@ export class UserProfile {
     "id": string;
     "color": string;
     "is_bot": boolean;
-    "profile": {"display_name": string, "real_name": string, "avatar_hash": string};
+    "tz": string;
+    "tz_label": string;
+    "tz_offset": number;
+    "profile": {"display_name": string, "real_name": string, "avatar_hash": string, "title": string, "phone": string, "status_text": string, "status_emoji": string, "first_name": string, "last_name": string};
 
     /** Creates a new UserProfile instance. */
     constructor($$source: Partial<UserProfile> = {}) {
@@ -337,8 +341,17 @@ export class UserProfile {
         if (!("is_bot" in $$source)) {
             this["is_bot"] = false;
         }
+        if (!("tz" in $$source)) {
+            this["tz"] = "";
+        }
+        if (!("tz_label" in $$source)) {
+            this["tz_label"] = "";
+        }
+        if (!("tz_offset" in $$source)) {
+            this["tz_offset"] = 0;
+        }
         if (!("profile" in $$source)) {
-            this["profile"] = {"display_name": "", "real_name": "", "avatar_hash": ""};
+            this["profile"] = {"display_name": "", "real_name": "", "avatar_hash": "", "title": "", "phone": "", "status_text": "", "status_emoji": "", "first_name": "", "last_name": ""};
         }
 
         Object.assign(this, $$source);

@@ -7,6 +7,9 @@ import styles from "./MessageItem.module.css";
 import ClankerChip from "./misc/ClankerChip";
 import ThreadRepliesButton from "./misc/ThreadRepliesButton";
 import BlockKitRenderer from "../blockkit/BlockKitRenderer";
+import { GetAvatarUrl } from "../utils/pfp";
+import UserProfileCardTrigger from "./misc/UserProfileCardTrigger";
+import EditedIndicator from "./misc/EditedIndicator";
 
 export default function MessageItem(props: {
   message: Message;
@@ -16,22 +19,20 @@ export default function MessageItem(props: {
   onThreadClick?: (message: Message) => void;
   showThreadButton: boolean;
 }) {
-  const getAvatarUrl = (profile: UserProfile) => {
-    const hash = profile.profile.avatar_hash;
-    const userId = profile.id;
-    const workspaceID = props.workspaceID;
-
-    return `https://ca.slack-edge.com/${workspaceID}-${userId}-${hash}-48`;
-  };
-
   return (
     <div class={`${styles.message} ${props.showUser ? styles.groupStart : ""}`}>
       <div class={styles.left}>
         <Show when={props.showUser && props.profile}>
-          <img
-            src={getAvatarUrl(props.profile!)}
-            alt={`${props.profile!.profile.display_name}'s profile picture`}
-            class={styles.avatar}
+          <UserProfileCardTrigger
+            profile={props.profile!}
+            workspaceID={props.workspaceID}
+            children={
+              <img
+                src={GetAvatarUrl(props.profile!, props.workspaceID)}
+                alt={`${props.profile!.profile.display_name}'s profile picture`}
+                class={styles.avatar}
+              />
+            }
           />
         </Show>
         <Show when={props.showUser == false}>
@@ -69,6 +70,9 @@ export default function MessageItem(props: {
         </Show>
         <div class={styles.text}>
           <BlockKitRenderer blocks={props.message.blocks} />
+          <Show when={props.message.edited?.ts}>
+            <EditedIndicator />
+          </Show>
         </div>
         <Show
           when={

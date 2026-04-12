@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, on, Show } from "solid-js";
+import { createEffect, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
 import styles from "./MessageList.module.css";
 import threadStyles from "./ThreadView.module.css";
 import Scrollbar from "./misc/Scrollbar";
@@ -7,6 +7,7 @@ import {
   GetThreadMessages,
   ResolveUsers,
 } from "../../bindings/fastslack/slackservice";
+import { Events } from "@wailsio/runtime";
 import MessageItem from "./MessageItem";
 import { setChatStore } from "../ChatStore";
 
@@ -114,6 +115,40 @@ export default function ThreadView(props: {
       loadMoreReplies();
     }
   };
+
+  onMount(() => {
+    const offMessage = Events.On("slack:message", (event: any) => {
+      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID || data.thread_ts !== threadTS()) return;
+
+      const msg = data as Message;
+      setReplies((prev) => [...prev, msg]);
+      fetchProfiles([msg]);
+    });
+
+    const offChanged = Events.On("slack:message_changed", (event: any) => {
+      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID) return;
+
+      const updated = data.message as Message;
+      if (updated.thread_ts !== threadTS() && updated.ts !== threadTS()) return;
+
+      setReplies((prev) => prev.map((m) => (m.ts === updated.ts ? updated : m)));
+    });
+
+    const offDeleted = Events.On("slack:message_deleted", (event: any) => {
+      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID || data.thread_ts !== threadTS()) return;
+
+      setReplies((prev) => prev.filter((m) => m.ts !== data.deleted_ts));
+    });
+
+    onCleanup(() => {
+      offMessage();
+      offChanged();
+      offDeleted();
+    });
+  });
 
   return (
     <div class={threadStyles.panel}>
