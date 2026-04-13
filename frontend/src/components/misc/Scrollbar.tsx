@@ -98,6 +98,32 @@ export default function Scrollbar(props: Props) {
     });
   });
 
+  const onThumbDown = (e: MouseEvent) => {
+    e.preventDefault();
+    const el = props.container;
+    if (!el) return;
+
+    const startY = e.clientY;
+    const startScroll = el.scrollTop;
+    const { scrollHeight, clientHeight } = el;
+    const pad = (props.trackInset ?? 5) * 2;
+    const thumbHeight = Math.max((clientHeight / scrollHeight) * clientHeight, minThumb());
+    const trackRange = clientHeight - thumbHeight - pad;
+    const scrollRange = scrollHeight - clientHeight;
+
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - startY;
+      const scrollDelta = (delta / trackRange) * scrollRange;
+      el.scrollTop = startScroll + scrollDelta;
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
   const trackStyle = () => {
     const s: Record<string, string> = {};
     if (props.trackWidth != null) s.width = `${props.trackWidth}px`;
@@ -121,7 +147,7 @@ export default function Scrollbar(props: Props) {
       class={`${styles.track} ${visible() && scrollable() ? styles.visible : ""}`}
       style={trackStyle()}
     >
-      <div ref={thumbRef} class={styles.thumb} style={thumbStyle()} />
+      <div ref={thumbRef} class={styles.thumb} style={thumbStyle()} onMouseDown={onThumbDown} />
     </div>
   );
 }

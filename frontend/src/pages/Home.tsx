@@ -15,7 +15,11 @@ export default function Home() {
 
   return (
     <div class={styles.layout}>
-      <Sidebar teamID={workspace()!} onSelectChannel={setSelectedChannel} />
+      <Sidebar
+        teamID={workspace()!}
+        onSelectChannel={setSelectedChannel}
+        selectedChannel={selectedChannel()}
+      />
 
       <div class={styles.main}>
         <Show

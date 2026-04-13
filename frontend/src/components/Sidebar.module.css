@@ -32,6 +32,8 @@
 }
 
 .item {
+    display: flex;
+    align-items: center;
     padding: 4px 16px;
     font-size: var(--text-sm);
     cursor: pointer;
@@ -61,4 +63,46 @@
 
 .footer {
     padding: 8px;
+}
+
+.avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: clamp(3px, min(22.222%, 8px), 8px);
+}
+
+.dmItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.active .hash {
+    color: var(--color-canvas);
+}
+
+.active {
+    background: var(--color-primary);
+    color: var(--color-canvas);
+}
+
+.active:hover {
+    background: var(--color-primary);
+    color: var(--color-canvas);
+}
+
+.lock {
+    margin-left: -4px;
+    display: flex;
+    justify-content: center;
+    margin-right: 4px;
+    fill: var(--color-ink-muted);
+    align-self: center;
+    align-self: center;
+    color: var(--color-ink-muted);
+}
+
+.active .lock {
+    fill: var(--color-canvas);
+    color: var(--color-canvas);
 }

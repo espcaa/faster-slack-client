@@ -110,8 +110,13 @@ function RichTextElementView(props: {
         {(el) => {
           const e = el() as Extract<RichTextElement, { type: "emoji" }>;
           if (e.unicode) {
-            return String.fromCodePoint(
-              ...e.unicode.split("-").map((cp) => parseInt(cp, 16)),
+            const emojiIcon = String.fromCodePoint(parseInt(e.unicode, 16));
+            return (
+              <span
+                style={{ "font-size": props.isOnlyEmoji ? "32px" : "20px" }}
+              >
+                {emojiIcon}
+              </span>
             );
           }
           return (

@@ -86,14 +86,6 @@ func (c *Client) DoWithQuery(teamID string, method string, params url.Values, qu
 		"accept":       {"*/*"},
 	}
 
-	req.Header[http.HeaderOrderKey] = []string{
-		"content-type",
-		"user-agent",
-		"origin",
-		"cookie",
-		"accept",
-	}
-
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return nil, err

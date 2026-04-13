@@ -72,3 +72,7 @@
     font-weight: 100;
     font-style: normal;
 }
+
+li {
+    margin-left: 1.5em;
+}
