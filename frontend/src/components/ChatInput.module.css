@@ -1,0 +1,16 @@
+.container {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    width: 100%;
+    background: var(--color-canvas);
+}
+
+.input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: var(--text-base);
+}

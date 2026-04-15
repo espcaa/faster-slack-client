@@ -44,9 +44,9 @@ func (c *Client) GetConversationMessages(teamID, channelID, cursor string) (*sha
 	}
 
 	var resp struct {
-		Ok       bool             `json:"ok"`
-		Messages []shared.Message `json:"messages"`
-		HasMore  bool             `json:"has_more"`
+		Ok       bool              `json:"ok"`
+		Messages []json.RawMessage `json:"messages"`
+		HasMore  bool              `json:"has_more"`
 		Metadata struct {
 			NextCursor string `json:"next_cursor"`
 		} `json:"response_metadata"`
@@ -56,8 +56,16 @@ func (c *Client) GetConversationMessages(teamID, channelID, cursor string) (*sha
 		return nil, err
 	}
 
+	msgs := make([]shared.Message, len(resp.Messages))
+	for i, rawMsg := range resp.Messages {
+		if err := json.Unmarshal(rawMsg, &msgs[i]); err != nil {
+			return nil, err
+		}
+		msgs[i].Raw = rawMsg
+	}
+
 	return &shared.MessagesResponse{
-		Messages:   resp.Messages,
+		Messages:   msgs,
 		HasMore:    resp.HasMore,
 		NextCursor: resp.Metadata.NextCursor,
 	}, nil
@@ -121,6 +129,17 @@ func (c *Client) GetEmojisInfo(teamID string, updatedIDs map[string]int64) ([]sh
 	return result.Results, nil
 }
 
+func (c *Client) SendMessage(teamID, channelID string, blocks json.RawMessage, threadTS string) (json.RawMessage, error) {
+	params := url.Values{}
+	params.Set("channel", channelID)
+	params.Set("blocks", string(blocks))
+	if threadTS != "" {
+		params.Set("thread_ts", threadTS)
+	}
+
+	return c.Do(teamID, "chat.postMessage", params)
+}
+
 func (c *Client) GetThreadReplies(teamID, channelID, threadTS, cursor string) (*shared.MessagesResponse, error) {
 	// set form data
 	params := url.Values{}
@@ -137,9 +156,9 @@ func (c *Client) GetThreadReplies(teamID, channelID, threadTS, cursor string) (*
 	}
 
 	var resp struct {
-		Ok       bool             `json:"ok"`
-		Messages []shared.Message `json:"messages"`
-		HasMore  bool             `json:"has_more"`
+		Ok       bool              `json:"ok"`
+		Messages []json.RawMessage `json:"messages"`
+		HasMore  bool              `json:"has_more"`
 		Metadata struct {
 			NextCursor string `json:"next_cursor"`
 		} `json:"response_metadata"`
@@ -149,8 +168,16 @@ func (c *Client) GetThreadReplies(teamID, channelID, threadTS, cursor string) (*
 		return nil, err
 	}
 
+	msgs := make([]shared.Message, len(resp.Messages))
+	for i, rawMsg := range resp.Messages {
+		if err := json.Unmarshal(rawMsg, &msgs[i]); err != nil {
+			return nil, err
+		}
+		msgs[i].Raw = rawMsg
+	}
+
 	return &shared.MessagesResponse{
-		Messages:   resp.Messages,
+		Messages:   msgs,
 		HasMore:    resp.HasMore,
 		NextCursor: resp.Metadata.NextCursor,
 	}, nil

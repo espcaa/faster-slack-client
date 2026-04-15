@@ -43,6 +43,7 @@ func openMessageDB() (*sql.DB, error) {
     			reply_users  TEXT NOT NULL DEFAULT '',   -- JSON-encoded []string
     			blocks       TEXT NOT NULL DEFAULT '',   -- raw JSON passthrough
     			edited       TEXT NOT NULL DEFAULT '',
+    			raw_json     TEXT NOT NULL DEFAULT '',   -- full raw JSON from Slack
     			PRIMARY KEY (team_id, channel_id, thread_ts, ts)
     		);
 
@@ -97,8 +98,8 @@ func SaveMessages(teamID, channelID string, msgs []shared.Message) error {
 
 	stmt, err := tx.Prepare(`
     INSERT OR REPLACE INTO messages
-        (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited, raw_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 	if err != nil {
 		return err
@@ -109,7 +110,7 @@ func SaveMessages(teamID, channelID string, msgs []shared.Message) error {
 		_, err := stmt.Exec(
 			teamID, channelID,
 			m.Ts, m.User, m.Text, m.Type, m.Subtype, m.Team, m.ThreadTs,
-			m.ReplyCount, m.LatestReply, encodeReplyUsers(m.ReplyUsers), string(m.Blocks), string(m.Edited),
+			m.ReplyCount, m.LatestReply, encodeReplyUsers(m.ReplyUsers), string(m.Blocks), string(m.Edited), string(m.Raw),
 		)
 		if err != nil {
 			return err
@@ -128,7 +129,7 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 	var rows *sql.Rows
 	if threadTS == "" {
 		rows, err = db.Query(`
-		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited
+		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited, raw_json
 		FROM messages
 		WHERE team_id = ? AND channel_id = ? AND (thread_ts = '' OR thread_ts = ts)
 		ORDER BY ts DESC
@@ -136,7 +137,7 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 		`, teamID, channelID, limit)
 	} else {
 		rows, err = db.Query(`
-		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited
+		SELECT ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited, raw_json
 		FROM messages
 		WHERE team_id = ? AND channel_id = ? AND thread_ts = ?
 		ORDER BY ts ASC
@@ -151,10 +152,10 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 	var msgs []shared.Message
 	for rows.Next() {
 		var m shared.Message
-		var replyUsers, blocks, edited string
+		var replyUsers, blocks, edited, rawJSON string
 		if err := rows.Scan(
 			&m.Ts, &m.User, &m.Text, &m.Type, &m.Subtype, &m.Team, &m.ThreadTs,
-			&m.ReplyCount, &m.LatestReply, &replyUsers, &blocks, &edited,
+			&m.ReplyCount, &m.LatestReply, &replyUsers, &blocks, &edited, &rawJSON,
 		); err != nil {
 			return nil, err
 		}
@@ -164,6 +165,9 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 		}
 		if edited != "" {
 			m.Edited = json.RawMessage(edited)
+		}
+		if rawJSON != "" {
+			m.Raw = json.RawMessage(rawJSON)
 		}
 		msgs = append(msgs, m)
 	}
@@ -177,10 +181,10 @@ func UpsertMessage(teamID, channelID string, msg shared.Message) error {
 	}
 
 	_, err = db.Exec(`
-			INSERT OR REPLACE INTO messages (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT OR REPLACE INTO messages (team_id, channel_id, ts, user, text, type, subtype, team, thread_ts, reply_count, latest_reply, reply_users, blocks, edited, raw_json)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, teamID, channelID, msg.Ts, msg.User, msg.Text, msg.Type, msg.Subtype, msg.Team, msg.ThreadTs,
-		msg.ReplyCount, msg.LatestReply, encodeReplyUsers(msg.ReplyUsers), string(msg.Blocks), string(msg.Edited))
+		msg.ReplyCount, msg.LatestReply, encodeReplyUsers(msg.ReplyUsers), string(msg.Blocks), string(msg.Edited), string(msg.Raw))
 	return err
 }
 

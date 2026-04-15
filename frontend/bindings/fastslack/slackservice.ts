@@ -49,6 +49,10 @@ export function ResolveUsers(teamID: string, userIDs: string[]): $CancellablePro
     });
 }
 
+export function SendMessage(teamID: string, channelID: string, blocks: string, threadTS: string): $CancellablePromise<void> {
+    return $Call.ByID(300632422, teamID, channelID, blocks, threadTS);
+}
+
 // Private type creation functions
 const $$createType0 = shared$0.Channel.createFrom;
 const $$createType1 = $Create.Array($$createType0);

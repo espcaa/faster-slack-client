@@ -17,6 +17,7 @@ import { Events } from "@wailsio/runtime";
 import MessageItem from "./MessageItem";
 import { chatStore, setChatStore, scrollPositions } from "../ChatStore";
 import SlickScrollbar from "./misc/Scrollbar";
+import ChatInput from "./ChatInput";
 
 export default function MessageList(props: {
   teamID: string;
@@ -122,6 +123,8 @@ export default function MessageList(props: {
       const data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       if (data.channel !== props.channelID) return;
+      // Skip threaded replies — they belong in ThreadView, not the channel
+      if (data.thread_ts && data.thread_ts !== data.ts) return;
       console.log("New message event received", data);
       const msg = data as Message;
       setChatStore("messages", (prev) => [msg, ...prev]);
@@ -155,51 +158,54 @@ export default function MessageList(props: {
   });
 
   return (
-    <div class={styles.listWrapper}>
-      <div class={styles.list} ref={containerRef} onScroll={handleScroll}>
-        <For each={messages()}>
-          {(msg, i) => {
-            const nextOlder = () => messages()[i() + 1];
-            const showHeader = () => {
-              if (!nextOlder()) return true;
+    <div class={styles.container}>
+      <div class={styles.listWrapper}>
+        <div class={styles.list} ref={containerRef} onScroll={handleScroll}>
+          <For each={messages()}>
+            {(msg, i) => {
+              const nextOlder = () => messages()[i() + 1];
+              const showHeader = () => {
+                if (!nextOlder()) return true;
 
-              if (nextOlder().user !== msg.user) return true;
+                if (nextOlder().user !== msg.user) return true;
 
-              const diff = parseFloat(msg.ts) - parseFloat(nextOlder().ts);
-              return diff > 180;
-            };
-            return (
-              <MessageItem
-                message={msg}
-                profile={profiles()[msg.user]}
-                showUser={showHeader()}
-                workspaceID={props.teamID}
-                onThreadClick={(message) =>
-                  setChatStore({
-                    threadTS: message.thread_ts || message.ts,
-                    threadParent: message,
-                    openThreads: {
-                      ...chatStore.openThreads,
-                      [props.channelID]: {
-                        threadTs: message.thread_ts || message.ts,
-                        threadParent: message,
+                const diff = parseFloat(msg.ts) - parseFloat(nextOlder().ts);
+                return diff > 180;
+              };
+              return (
+                <MessageItem
+                  message={msg}
+                  profile={profiles()[msg.user]}
+                  showUser={showHeader()}
+                  workspaceID={props.teamID}
+                  onThreadClick={(message) =>
+                    setChatStore({
+                      threadTS: message.thread_ts || message.ts,
+                      threadParent: message,
+                      openThreads: {
+                        ...chatStore.openThreads,
+                        [props.channelID]: {
+                          threadTs: message.thread_ts || message.ts,
+                          threadParent: message,
+                        },
                       },
-                    },
-                  })
-                }
-                showThreadButton={true}
-              />
-            );
-          }}
-        </For>
+                    })
+                  }
+                  showThreadButton={true}
+                />
+              );
+            }}
+          </For>
 
-        <Show when={fetchingOlder()}>
-          <div class={styles.loading}>Fetching older messages...</div>
+          <Show when={fetchingOlder()}>
+            <div class={styles.loading}>Fetching older messages...</div>
+          </Show>
+        </div>
+        <Show when={containerRef}>
+          <SlickScrollbar container={containerRef} reversed />
         </Show>
       </div>
-      <Show when={containerRef}>
-        <SlickScrollbar container={containerRef} reversed />
-      </Show>
+      <ChatInput teamID={props.teamID} channelID={props.channelID} />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import BlockKitRenderer from "../blockkit/BlockKitRenderer";
 import { GetAvatarUrl } from "../utils/pfp";
 import UserProfileCardTrigger from "./misc/UserProfileCardTrigger";
 import EditedIndicator from "./misc/EditedIndicator";
+import FileContainer from "./FilesContainer";
 
 export default function MessageItem(props: {
   message: Message;
@@ -54,7 +55,7 @@ export default function MessageItem(props: {
               {props.profile!.profile.display_name ||
                 props.profile!.profile.real_name}
             </span>
-            <div class="time-right">
+            <div class={styles.timeRight}>
               {new Date(parseInt(props.message.ts) * 1000).toLocaleTimeString(
                 [],
                 {
@@ -74,6 +75,9 @@ export default function MessageItem(props: {
             <EditedIndicator />
           </Show>
         </div>
+        <Show when={!!props.message.files?.length}>
+          <FileContainer files={props.message.files!} />
+        </Show>
         <Show
           when={
             props.message.reply_count &&

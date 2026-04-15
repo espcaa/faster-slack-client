@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fastslack/shared"
 	"fastslack/slack"
 	"fastslack/store"
@@ -182,6 +183,14 @@ func (s *SlackService) GetIMs(teamID string) []shared.Im {
 		ims = append(ims, im)
 	}
 	return ims
+}
+
+func (s *SlackService) SendMessage(teamID, channelID string, blocks string, threadTS string) error {
+	if s.Client == nil {
+		return fmt.Errorf("not connected")
+	}
+	_, err := s.Client.SendMessage(teamID, channelID, json.RawMessage(blocks), threadTS)
+	return err
 }
 
 func (c *SlackService) GetThreadMessages(teamID, channelID, threadTS, cursor string) (*shared.MessagesResponse, error) {

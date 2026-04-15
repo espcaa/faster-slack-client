@@ -58,7 +58,11 @@ export default function Sidebar(props: Props) {
   const sortedIMs = () =>
     (ims() ?? [])
       .filter((im) => !im.is_archived)
-      .sort((a, b) => a.user.localeCompare(b.user));
+      .sort((a, b) => {
+        const aTime = a.updated || a.created || 0;
+        const bTime = b.updated || b.created || 0;
+        return bTime - aTime;
+      });
 
   const selectChannel = (id: string) => {
     props.onSelectChannel(id);

@@ -12,6 +12,10 @@ import (
 
 func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 	app := application.Get()
+	if app == nil {
+		log.Printf("App not ready yet, dropping RTM event %s for team %s", event.Type, teamID)
+		return
+	}
 
 	switch event.Type {
 	case "message":
@@ -30,6 +34,7 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 				return
 			}
 
+			changedEvent.Message.Raw = event.Raw
 			store.UpsertMessage(teamID, event.Channel, changedEvent.Message)
 
 			// send event to frontend
@@ -54,6 +59,7 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 				Type:     event.Type,
 				Team:     event.Team,
 				ThreadTs: event.ThreadTs,
+				Raw:      event.Raw,
 			})
 
 			log.Printf("Message stored in database for team %s: %s", teamID, event.Text)

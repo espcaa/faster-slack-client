@@ -124,6 +124,129 @@ export class Emoji {
     }
 }
 
+export class File {
+    "id": string;
+    "created": number;
+    "timestamp": json$0.Number;
+    "mimetype": string;
+    "filetype": string;
+    "pretty_type": string;
+    "user": string;
+    "user_team": string;
+    "editable": boolean;
+    "size": number;
+    "mode": string;
+    "is_external": boolean;
+    "external_type": string;
+    "is_public": boolean;
+    "public_url_shared": boolean;
+    "display_as_bot": boolean;
+    "username"?: string;
+    "name"?: string;
+    "title"?: string;
+    "url_private"?: string;
+    "url_private_download"?: string;
+    "media_display_type"?: string;
+
+    /**
+     * very smol
+     */
+    "thumb_64"?: string;
+    "thumb_80"?: string;
+    "thumb_160"?: string;
+    "thumb_360"?: string;
+    "thumb_360_w"?: number;
+    "thumb_360_h"?: number;
+    "thumb_480"?: string;
+    "thumb_480_w"?: number;
+    "thumb_480_h"?: number;
+    "thumb_720"?: string;
+    "thumb_720_w"?: number;
+    "thumb_720_h"?: number;
+    "thumb_800"?: string;
+    "thumb_800_w"?: number;
+    "thumb_800_h"?: number;
+    "thumb_960"?: string;
+    "thumb_960_w"?: number;
+    "thumb_960_h"?: number;
+    "thumb_1024"?: string;
+    "thumb_1024_w"?: number;
+    "thumb_1024_h"?: number;
+    "thumb_tiny"?: string;
+    "thumb_pdf"?: string;
+    "thumb_video"?: string;
+    "thumb_360_gif"?: string;
+    "original_w"?: number;
+    "original_h"?: number;
+    "permalink"?: string;
+    "permalink_public"?: string;
+    "has_rich_preview"?: boolean;
+    "is_starred"?: boolean;
+    "file_access"?: string;
+
+    /** Creates a new File instance. */
+    constructor($$source: Partial<File> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("created" in $$source)) {
+            this["created"] = 0;
+        }
+        if (!("timestamp" in $$source)) {
+            this["timestamp"] = "";
+        }
+        if (!("mimetype" in $$source)) {
+            this["mimetype"] = "";
+        }
+        if (!("filetype" in $$source)) {
+            this["filetype"] = "";
+        }
+        if (!("pretty_type" in $$source)) {
+            this["pretty_type"] = "";
+        }
+        if (!("user" in $$source)) {
+            this["user"] = "";
+        }
+        if (!("user_team" in $$source)) {
+            this["user_team"] = "";
+        }
+        if (!("editable" in $$source)) {
+            this["editable"] = false;
+        }
+        if (!("size" in $$source)) {
+            this["size"] = 0;
+        }
+        if (!("mode" in $$source)) {
+            this["mode"] = "";
+        }
+        if (!("is_external" in $$source)) {
+            this["is_external"] = false;
+        }
+        if (!("external_type" in $$source)) {
+            this["external_type"] = "";
+        }
+        if (!("is_public" in $$source)) {
+            this["is_public"] = false;
+        }
+        if (!("public_url_shared" in $$source)) {
+            this["public_url_shared"] = false;
+        }
+        if (!("display_as_bot" in $$source)) {
+            this["display_as_bot"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new File instance from a string or object.
+     */
+    static createFrom($$source: any = {}): File {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new File($$parsedSource as Partial<File>);
+    }
+}
+
 export class Im {
     "id": string;
     "created": number;
@@ -135,6 +258,7 @@ export class Im {
      */
     "user": string;
     "is_open": boolean;
+    "updated": number;
     "properties": {"tabs"?: Tab[]};
 
     /** Creates a new Im instance. */
@@ -157,6 +281,9 @@ export class Im {
         if (!("is_open" in $$source)) {
             this["is_open"] = false;
         }
+        if (!("updated" in $$source)) {
+            this["updated"] = 0;
+        }
         if (!("properties" in $$source)) {
             this["properties"] = {};
         }
@@ -168,10 +295,10 @@ export class Im {
      * Creates a new Im instance from a string or object.
      */
     static createFrom($$source: any = {}): Im {
-        const $$createField6_0 = $$createType6;
+        const $$createField7_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("properties" in $$parsedSource) {
-            $$parsedSource["properties"] = $$createField6_0($$parsedSource["properties"]);
+            $$parsedSource["properties"] = $$createField7_0($$parsedSource["properties"]);
         }
         return new Im($$parsedSource as Partial<Im>);
     }
@@ -190,6 +317,7 @@ export class Message {
     "reply_users"?: string[];
     "blocks"?: json$0.RawMessage;
     "edited"?: json$0.RawMessage;
+    "files"?: File[];
 
     /** Creates a new Message instance. */
     constructor($$source: Partial<Message> = {}) {
@@ -214,9 +342,13 @@ export class Message {
      */
     static createFrom($$source: any = {}): Message {
         const $$createField9_0 = $$createType2;
+        const $$createField12_0 = $$createType8;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("reply_users" in $$parsedSource) {
             $$parsedSource["reply_users"] = $$createField9_0($$parsedSource["reply_users"]);
+        }
+        if ("files" in $$parsedSource) {
+            $$parsedSource["files"] = $$createField12_0($$parsedSource["files"]);
         }
         return new Message($$parsedSource as Partial<Message>);
     }
@@ -246,7 +378,7 @@ export class MessagesResponse {
      * Creates a new MessagesResponse instance from a string or object.
      */
     static createFrom($$source: any = {}): MessagesResponse {
-        const $$createField0_0 = $$createType8;
+        const $$createField0_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("messages" in $$parsedSource) {
             $$parsedSource["messages"] = $$createField0_0($$parsedSource["messages"]);
@@ -275,7 +407,7 @@ export class SlackSession {
      * Creates a new SlackSession instance from a string or object.
      */
     static createFrom($$source: any = {}): SlackSession {
-        const $$createField1_0 = $$createType10;
+        const $$createField1_0 = $$createType12;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("workspaces" in $$parsedSource) {
             $$parsedSource["workspaces"] = $$createField1_0($$parsedSource["workspaces"]);
@@ -420,7 +552,9 @@ const $$createType5 = $Create.Struct({
 const $$createType6 = $Create.Struct({
     "tabs": $$createType1,
 });
-const $$createType7 = Message.createFrom;
+const $$createType7 = File.createFrom;
 const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = WorkspaceSession.createFrom;
-const $$createType10 = $Create.Map($Create.Any, $$createType9);
+const $$createType9 = Message.createFrom;
+const $$createType10 = $Create.Array($$createType9);
+const $$createType11 = WorkspaceSession.createFrom;
+const $$createType12 = $Create.Map($Create.Any, $$createType11);
