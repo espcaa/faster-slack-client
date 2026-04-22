@@ -77,7 +77,7 @@ func InitMessageDB() error {
 		return err
 	}
 
-	// clear all cached messages on startup — the cache is session-only
+	// clear all cached messages on startup
 	// because we miss websocket events between sessions
 	_, _ = db.Exec(`DELETE FROM messages`)
 

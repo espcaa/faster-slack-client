@@ -1,4 +1,12 @@
-import { createEffect, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import styles from "./MessageList.module.css";
 import threadStyles from "./ThreadView.module.css";
 import Scrollbar from "./misc/Scrollbar";
@@ -9,6 +17,7 @@ import {
 } from "../../bindings/fastslack/slackservice";
 import { Events } from "@wailsio/runtime";
 import MessageItem from "./MessageItem";
+import DateDivider, { isDifferentDay } from "./DateDivider";
 import { setChatStore } from "../ChatStore";
 
 const threadScrollPositions = new Map<string, number>();
@@ -20,9 +29,9 @@ export default function ThreadView(props: {
 }) {
   let containerRef!: HTMLDivElement;
   const [loading, setLoading] = createSignal(false);
+  const [fetchingOlder, setFetchingOlder] = createSignal(false);
   const [replies, setReplies] = createSignal<Message[]>([]);
   const [nextCursor, setNextCursor] = createSignal<string | null>(null);
-  const [fetchingOlder, setFetchingOlder] = createSignal(false);
   const [profiles, setProfiles] = createSignal<Record<string, UserProfile>>({});
 
   const threadTS = () => props.parentMessage.ts;
@@ -36,61 +45,67 @@ export default function ThreadView(props: {
     setProfiles((prev) => ({ ...prev, ...profileMap }));
   };
 
+  const dedupe = (msgs: Message[]): Message[] => {
+    const seen = new Set<string>();
+    return msgs.filter((m) => {
+      if (seen.has(m.ts)) return false;
+      seen.add(m.ts);
+      return true;
+    });
+  };
+
   const loadReplies = async () => {
     setLoading(true);
     setReplies([]);
     setNextCursor(null);
-    const res = await GetThreadMessages(
+
+    // fetch first page (may come from cache)
+    const first = await GetThreadMessages(
       props.teamID,
       props.channelID,
       threadTS(),
       "",
     );
-    if (res) {
-      setReplies(res.messages);
-      setNextCursor(res.next_cursor || null);
-      fetchProfiles(res.messages);
+    let msgs = first?.messages || [];
+    let cursor = first?.next_cursor || "";
 
-      if (res.next_cursor === "cache") {
-        const fresh = await GetThreadMessages(
-          props.teamID,
-          props.channelID,
-          threadTS(),
-          "cache",
-        );
-        if (fresh) {
-          setReplies((prev) => {
-            const existingTs = new Set(prev.map((m) => m.ts));
-            const newMsgs = res.messages.filter((m) => !existingTs.has(m.ts));
-            return [...prev, ...newMsgs];
-          });
-          setNextCursor(fresh.next_cursor || null);
-          fetchProfiles(fresh.messages);
-        }
-      }
+    // if cache was used, refresh from the API
+    if (cursor === "cache") {
+      const fresh = await GetThreadMessages(
+        props.teamID,
+        props.channelID,
+        threadTS(),
+        "cache",
+      );
+      msgs = fresh?.messages || [];
+      cursor = fresh?.next_cursor || "";
     }
+
+    setReplies(dedupe(msgs));
+    setNextCursor(cursor || null);
+    fetchProfiles(msgs);
     setLoading(false);
     requestAnimationFrame(() => {
       containerRef.scrollTop = threadScrollPositions.get(threadTS()) ?? 0;
     });
   };
 
-  const loadMoreReplies = async () => {
+  const loadOlderReplies = async () => {
     const cursor = nextCursor();
     if (!cursor || fetchingOlder()) return;
 
     setFetchingOlder(true);
     try {
-      const res = await GetThreadMessages(
+      const page = await GetThreadMessages(
         props.teamID,
         props.channelID,
         threadTS(),
         cursor,
       );
-      if (res) {
-        setReplies((prev) => [...prev, ...res.messages]);
-        setNextCursor(res.next_cursor || null);
-        fetchProfiles(res.messages);
+      if (page) {
+        setReplies((prev) => dedupe([...prev, ...page.messages]));
+        setNextCursor(page.next_cursor || null);
+        fetchProfiles(page.messages);
       }
     } finally {
       setFetchingOlder(false);
@@ -110,35 +125,46 @@ export default function ThreadView(props: {
     const el = e.currentTarget as HTMLDivElement;
     threadScrollPositions.set(threadTS(), el.scrollTop);
 
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 5;
-    if (atBottom && !fetchingOlder()) {
-      loadMoreReplies();
+    const nearBottom =
+      el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
+    if (nearBottom && !fetchingOlder()) {
+      loadOlderReplies();
     }
   };
 
   onMount(() => {
     const offMessage = Events.On("slack:message", (event: any) => {
-      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      if (data.channel !== props.channelID || data.thread_ts !== threadTS()) return;
+      const data =
+        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID || data.thread_ts !== threadTS())
+        return;
 
       const msg = data as Message;
-      setReplies((prev) => [...prev, msg]);
+      setReplies((prev) => {
+        if (prev.some((m) => m.ts === msg.ts)) return prev;
+        return [...prev, msg];
+      });
       fetchProfiles([msg]);
     });
 
     const offChanged = Events.On("slack:message_changed", (event: any) => {
-      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      const data =
+        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       if (data.channel !== props.channelID) return;
 
       const updated = data.message as Message;
       if (updated.thread_ts !== threadTS() && updated.ts !== threadTS()) return;
 
-      setReplies((prev) => prev.map((m) => (m.ts === updated.ts ? updated : m)));
+      setReplies((prev) =>
+        prev.map((m) => (m.ts === updated.ts ? updated : m)),
+      );
     });
 
     const offDeleted = Events.On("slack:message_deleted", (event: any) => {
-      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      if (data.channel !== props.channelID || data.thread_ts !== threadTS()) return;
+      const data =
+        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data.channel !== props.channelID || data.thread_ts !== threadTS())
+        return;
 
       setReplies((prev) => prev.filter((m) => m.ts !== data.deleted_ts));
     });
@@ -183,9 +209,17 @@ export default function ThreadView(props: {
                 const diff = parseFloat(msg.ts) - parseFloat(prev().ts);
                 return diff > 180;
               };
+              const showDateDivider = () => {
+                if (i() <= 1) return false;
+                if (!prev()) return false;
+                return isDifferentDay(prev().ts, msg.ts);
+              };
 
               return (
                 <>
+                  <Show when={showDateDivider()}>
+                    <DateDivider ts={msg.ts} />
+                  </Show>
                   <MessageItem
                     message={msg}
                     profile={profiles()[msg.user]}
@@ -196,8 +230,8 @@ export default function ThreadView(props: {
                   <Show when={i() === 0 && replies().length > 1}>
                     <div class={threadStyles.replyDivider}>
                       <span class={threadStyles.replyCount}>
-                        {props.parentMessage.reply_count || 0 - 1}{" "}
-                        {props.parentMessage.reply_count || 0 - 1 === 1
+                        {(props.parentMessage.reply_count || 0) - 1}{" "}
+                        {(props.parentMessage.reply_count || 0) - 1 === 1
                           ? "reply"
                           : "replies"}
                       </span>
@@ -210,7 +244,7 @@ export default function ThreadView(props: {
           </For>
 
           <Show when={fetchingOlder()}>
-            <div class={styles.loading}>Loading more...</div>
+            <div class={styles.loading}>Loading more replies...</div>
           </Show>
         </div>
         <Scrollbar container={containerRef} />

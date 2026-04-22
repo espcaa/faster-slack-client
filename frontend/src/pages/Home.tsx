@@ -5,6 +5,7 @@ import MessageList from "../components/MessageList";
 import { chatStore } from "../ChatStore";
 import ThreadView from "../components/ThreadView";
 import Sidebar from "../components/Sidebar";
+import SearchBar from "../components/Searchbar";
 
 export default function Home() {
   const { workspace } = useAuth();
@@ -15,6 +16,7 @@ export default function Home() {
 
   return (
     <div class={styles.layout}>
+      <SearchBar onSelectChannel={setSelectedChannel} />
       <Sidebar
         teamID={workspace()!}
         onSelectChannel={setSelectedChannel}

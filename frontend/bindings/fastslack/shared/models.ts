@@ -11,7 +11,7 @@ import * as json$0 from "../../encoding/json/models.js";
 
 export class Channel {
     "id": string;
-    "name": string;
+    "name"?: string;
     "is_channel": boolean;
     "is_group": boolean;
     "is_im": boolean;
@@ -20,23 +20,41 @@ export class Channel {
     "created": number;
     "is_archived": boolean;
     "updated": number;
-    "creator": string;
-    "topic": {"value": string, "creator": string, "last_set": number};
-    "purpose": {"value": string, "creator": string, "last_set": number};
+    "creator"?: string;
 
     /**
-     * properties
+     * userBoot fields
      */
-    "properties": {"tabs": Tab[], "posting_restricted_to": {"type": string[], "user": string[]} | null};
+    "is_general"?: boolean;
+    "name_normalized"?: string;
+    "is_shared"?: boolean;
+    "is_frozen"?: boolean;
+    "is_org_shared"?: boolean;
+    "is_ext_shared"?: boolean;
+    "context_team_id"?: string;
+    "shared_team_ids"?: string[];
+    "internal_team_ids"?: string[];
+    "members"?: string[];
+
+    /**
+     * conversations.info / IM fields
+     */
+    "user"?: string;
+    "is_open"?: boolean;
+    "last_read"?: string;
+    "priority"?: number;
+    "unread_count"?: number;
+    "unread_count_display"?: number;
+    "latest"?: Message | null;
+    "topic": {"value": string, "creator": string, "last_set": number};
+    "purpose": {"value": string, "creator": string, "last_set": number};
+    "properties": {"tabs"?: Tab[], "posting_restricted_to"?: {"type": string[], "user": string[]} | null, "is_dormant"?: boolean, "canvas"?: {"file_id": string, "is_empty": boolean, "quip_thread_id": string} | null};
     "previous_names"?: string[];
 
     /** Creates a new Channel instance. */
     constructor($$source: Partial<Channel> = {}) {
         if (!("id" in $$source)) {
             this["id"] = "";
-        }
-        if (!("name" in $$source)) {
-            this["name"] = "";
         }
         if (!("is_channel" in $$source)) {
             this["is_channel"] = false;
@@ -62,9 +80,6 @@ export class Channel {
         if (!("updated" in $$source)) {
             this["updated"] = 0;
         }
-        if (!("creator" in $$source)) {
-            this["creator"] = "";
-        }
         if (!("topic" in $$source)) {
             this["topic"] = {"value": "", "creator": "", "last_set": 0};
         }
@@ -72,7 +87,7 @@ export class Channel {
             this["purpose"] = {"value": "", "creator": "", "last_set": 0};
         }
         if (!("properties" in $$source)) {
-            this["properties"] = {"tabs": [], "posting_restricted_to": null};
+            this["properties"] = {};
         }
 
         Object.assign(this, $$source);
@@ -82,14 +97,30 @@ export class Channel {
      * Creates a new Channel instance from a string or object.
      */
     static createFrom($$source: any = {}): Channel {
-        const $$createField13_0 = $$createType5;
-        const $$createField14_0 = $$createType2;
+        const $$createField18_0 = $$createType0;
+        const $$createField19_0 = $$createType0;
+        const $$createField20_0 = $$createType0;
+        const $$createField27_0 = $$createType2;
+        const $$createField30_0 = $$createType7;
+        const $$createField31_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("shared_team_ids" in $$parsedSource) {
+            $$parsedSource["shared_team_ids"] = $$createField18_0($$parsedSource["shared_team_ids"]);
+        }
+        if ("internal_team_ids" in $$parsedSource) {
+            $$parsedSource["internal_team_ids"] = $$createField19_0($$parsedSource["internal_team_ids"]);
+        }
+        if ("members" in $$parsedSource) {
+            $$parsedSource["members"] = $$createField20_0($$parsedSource["members"]);
+        }
+        if ("latest" in $$parsedSource) {
+            $$parsedSource["latest"] = $$createField27_0($$parsedSource["latest"]);
+        }
         if ("properties" in $$parsedSource) {
-            $$parsedSource["properties"] = $$createField13_0($$parsedSource["properties"]);
+            $$parsedSource["properties"] = $$createField30_0($$parsedSource["properties"]);
         }
         if ("previous_names" in $$parsedSource) {
-            $$parsedSource["previous_names"] = $$createField14_0($$parsedSource["previous_names"]);
+            $$parsedSource["previous_names"] = $$createField31_0($$parsedSource["previous_names"]);
         }
         return new Channel($$parsedSource as Partial<Channel>);
     }
@@ -247,63 +278,6 @@ export class File {
     }
 }
 
-export class Im {
-    "id": string;
-    "created": number;
-    "is_im": boolean;
-    "is_archived": boolean;
-
-    /**
-     * the person you're dming
-     */
-    "user": string;
-    "is_open": boolean;
-    "updated": number;
-    "properties": {"tabs"?: Tab[]};
-
-    /** Creates a new Im instance. */
-    constructor($$source: Partial<Im> = {}) {
-        if (!("id" in $$source)) {
-            this["id"] = "";
-        }
-        if (!("created" in $$source)) {
-            this["created"] = 0;
-        }
-        if (!("is_im" in $$source)) {
-            this["is_im"] = false;
-        }
-        if (!("is_archived" in $$source)) {
-            this["is_archived"] = false;
-        }
-        if (!("user" in $$source)) {
-            this["user"] = "";
-        }
-        if (!("is_open" in $$source)) {
-            this["is_open"] = false;
-        }
-        if (!("updated" in $$source)) {
-            this["updated"] = 0;
-        }
-        if (!("properties" in $$source)) {
-            this["properties"] = {};
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new Im instance from a string or object.
-     */
-    static createFrom($$source: any = {}): Im {
-        const $$createField7_0 = $$createType6;
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("properties" in $$parsedSource) {
-            $$parsedSource["properties"] = $$createField7_0($$parsedSource["properties"]);
-        }
-        return new Im($$parsedSource as Partial<Im>);
-    }
-}
-
 export class Message {
     "user": string;
     "text": string;
@@ -341,8 +315,8 @@ export class Message {
      * Creates a new Message instance from a string or object.
      */
     static createFrom($$source: any = {}): Message {
-        const $$createField9_0 = $$createType2;
-        const $$createField12_0 = $$createType8;
+        const $$createField9_0 = $$createType0;
+        const $$createField12_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("reply_users" in $$parsedSource) {
             $$parsedSource["reply_users"] = $$createField9_0($$parsedSource["reply_users"]);
@@ -387,6 +361,35 @@ export class MessagesResponse {
     }
 }
 
+export class SearchResult {
+    "ChannelID": string;
+    "Name": string;
+    "Type": string;
+
+    /** Creates a new SearchResult instance. */
+    constructor($$source: Partial<SearchResult> = {}) {
+        if (!("ChannelID" in $$source)) {
+            this["ChannelID"] = "";
+        }
+        if (!("Name" in $$source)) {
+            this["Name"] = "";
+        }
+        if (!("Type" in $$source)) {
+            this["Type"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SearchResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SearchResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SearchResult($$parsedSource as Partial<SearchResult>);
+    }
+}
+
 export class SlackSession {
     "d_cookie": string;
     "workspaces": { [_ in string]?: WorkspaceSession };
@@ -418,27 +421,15 @@ export class SlackSession {
 
 export class Tab {
     "type": string;
-    "label": string;
-    "id": string;
-    "is_disabled": boolean | null;
-    "data": {"file_id"?: string, "shared_ts"?: string, "mute_edit_updates"?: boolean, "folder_bookmark_id"?: string} | null;
+    "label"?: string;
+    "id"?: string;
+    "is_disabled"?: boolean | null;
+    "data"?: {"file_id"?: string, "shared_ts"?: string, "mute_edit_updates"?: boolean, "folder_bookmark_id"?: string} | null;
 
     /** Creates a new Tab instance. */
     constructor($$source: Partial<Tab> = {}) {
         if (!("type" in $$source)) {
             this["type"] = "";
-        }
-        if (!("label" in $$source)) {
-            this["label"] = "";
-        }
-        if (!("id" in $$source)) {
-            this["id"] = "";
-        }
-        if (!("is_disabled" in $$source)) {
-            this["is_disabled"] = null;
-        }
-        if (!("data" in $$source)) {
-            this["data"] = null;
         }
 
         Object.assign(this, $$source);
@@ -537,24 +528,22 @@ export class WorkspaceSession {
 }
 
 // Private type creation functions
-const $$createType0 = Tab.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = $Create.Array($Create.Any);
-const $$createType3 = $Create.Struct({
-    "type": $$createType2,
-    "user": $$createType2,
-});
-const $$createType4 = $Create.Nullable($$createType3);
+const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = Message.createFrom;
+const $$createType2 = $Create.Nullable($$createType1);
+const $$createType3 = Tab.createFrom;
+const $$createType4 = $Create.Array($$createType3);
 const $$createType5 = $Create.Struct({
-    "tabs": $$createType1,
-    "posting_restricted_to": $$createType4,
+    "type": $$createType0,
+    "user": $$createType0,
 });
-const $$createType6 = $Create.Struct({
-    "tabs": $$createType1,
+const $$createType6 = $Create.Nullable($$createType5);
+const $$createType7 = $Create.Struct({
+    "tabs": $$createType4,
+    "posting_restricted_to": $$createType6,
 });
-const $$createType7 = File.createFrom;
-const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = Message.createFrom;
-const $$createType10 = $Create.Array($$createType9);
+const $$createType8 = File.createFrom;
+const $$createType9 = $Create.Array($$createType8);
+const $$createType10 = $Create.Array($$createType1);
 const $$createType11 = WorkspaceSession.createFrom;
 const $$createType12 = $Create.Map($Create.Any, $$createType11);

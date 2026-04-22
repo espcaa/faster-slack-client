@@ -25,6 +25,25 @@ type RTMEvent struct {
 	Raw      json.RawMessage `json:"-"`
 }
 
+func (e RTMEvent) UserID() string {
+	if len(e.User) == 0 {
+		return ""
+	}
+	// Try string first (e.g., "U12345")
+	var s string
+	if json.Unmarshal(e.User, &s) == nil {
+		return s
+	}
+	// Fall back to object with "id" field
+	var obj struct {
+		ID string `json:"id"`
+	}
+	if json.Unmarshal(e.User, &obj) == nil {
+		return obj.ID
+	}
+	return ""
+}
+
 type EventHandler func(teamID string, event RTMEvent)
 
 type RTMConnection struct {
@@ -139,6 +158,11 @@ func (rtm *RTMConnection) reconnect() {
 		go rtm.readLoop()
 		return
 	}
+}
+
+func (rtm *RTMConnection) SendTyping(channelID string, id int) error {
+	msg, _ := json.Marshal(map[string]any{"type": "user_typing", "channel": channelID, "id": id})
+	return rtm.conn.Write(rtm.ctx, websocket.MessageText, msg)
 }
 
 func (rtm *RTMConnection) Close() {

@@ -3,17 +3,11 @@ import styles from "./Scrollbar.module.css";
 
 interface Props {
   container?: HTMLDivElement | null;
-  /** Track width in px (default 6) */
   trackWidth?: number;
-  /** Thumb background color — overrides CSS variable */
   thumbColor?: string;
-  /** Track inset from edges in px (default 5) */
   trackInset?: number;
-  /** Track offset from right edge in px (default 4) */
   trackRight?: number;
-  /** Minimum thumb height in px (default 30) */
   minThumbHeight?: number;
-  /** If true the scrollbar shows for a column-reverse container */
   reversed?: boolean;
 }
 
@@ -49,7 +43,8 @@ export default function Scrollbar(props: Props) {
 
     if (props.reversed) {
       const scrollPercent = Math.abs(scrollTop) / scrollableDist;
-      const translateY = (1 - scrollPercent) * (clientHeight - thumbHeight - pad);
+      const translateY =
+        (1 - scrollPercent) * (clientHeight - thumbHeight - pad);
       thumb.style.transform = `translateY(${translateY}px)`;
     } else {
       const scrollPercent = scrollTop / scrollableDist;
@@ -73,7 +68,10 @@ export default function Scrollbar(props: Props) {
     const el = props.container;
     if (!el) return;
 
-    const onEnter = () => { update(); show(); };
+    const onEnter = () => {
+      update();
+      show();
+    };
 
     el.addEventListener("scroll", onScroll);
     el.addEventListener("mouseenter", onEnter);
@@ -82,7 +80,6 @@ export default function Scrollbar(props: Props) {
     const resizeObs = new ResizeObserver(update);
     resizeObs.observe(el);
 
-    // Watch for child additions/removals so we recalc after async content loads
     const mutObs = new MutationObserver(update);
     mutObs.observe(el, { childList: true, subtree: true });
 
@@ -107,7 +104,10 @@ export default function Scrollbar(props: Props) {
     const startScroll = el.scrollTop;
     const { scrollHeight, clientHeight } = el;
     const pad = (props.trackInset ?? 5) * 2;
-    const thumbHeight = Math.max((clientHeight / scrollHeight) * clientHeight, minThumb());
+    const thumbHeight = Math.max(
+      (clientHeight / scrollHeight) * clientHeight,
+      minThumb(),
+    );
     const trackRange = clientHeight - thumbHeight - pad;
     const scrollRange = scrollHeight - clientHeight;
 
@@ -147,7 +147,12 @@ export default function Scrollbar(props: Props) {
       class={`${styles.track} ${visible() && scrollable() ? styles.visible : ""}`}
       style={trackStyle()}
     >
-      <div ref={thumbRef} class={styles.thumb} style={thumbStyle()} onMouseDown={onThumbDown} />
+      <div
+        ref={thumbRef}
+        class={styles.thumb}
+        style={thumbStyle()}
+        onMouseDown={onThumbDown}
+      />
     </div>
   );
 }

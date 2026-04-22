@@ -13,39 +13,51 @@ export function Boot(): $CancellablePromise<void> {
     return $Call.ByID(380504861);
 }
 
-export function GetChannels(teamID: string): $CancellablePromise<shared$0.Channel[]> {
-    return $Call.ByID(3213025799, teamID).then(($result: any) => {
+export function GetChannelInfo(teamID: string, channelID: string): $CancellablePromise<shared$0.Channel | null> {
+    return $Call.ByID(1382314158, teamID, channelID).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
-export function GetIMs(teamID: string): $CancellablePromise<shared$0.Im[]> {
+export function GetChannels(teamID: string): $CancellablePromise<shared$0.Channel[]> {
+    return $Call.ByID(3213025799, teamID).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
+export function GetIMs(teamID: string): $CancellablePromise<shared$0.Channel[]> {
     return $Call.ByID(2667984826, teamID).then(($result: any) => {
-        return $$createType3($result);
+        return $$createType2($result);
     });
 }
 
 export function GetMessages(teamID: string, channelID: string, cursor: string): $CancellablePromise<shared$0.MessagesResponse | null> {
     return $Call.ByID(1012973511, teamID, channelID, cursor).then(($result: any) => {
-        return $$createType5($result);
+        return $$createType4($result);
     });
 }
 
 export function GetThreadMessages(teamID: string, channelID: string, threadTS: string, cursor: string): $CancellablePromise<shared$0.MessagesResponse | null> {
     return $Call.ByID(4013703191, teamID, channelID, threadTS, cursor).then(($result: any) => {
-        return $$createType5($result);
+        return $$createType4($result);
+    });
+}
+
+export function QuickUserChannelSearch(teamID: string, query: string): $CancellablePromise<shared$0.SearchResult[]> {
+    return $Call.ByID(3793405766, teamID, query).then(($result: any) => {
+        return $$createType6($result);
     });
 }
 
 export function ResolveEmojis(teamID: string, names: string[]): $CancellablePromise<shared$0.Emoji[]> {
     return $Call.ByID(1381900964, teamID, names).then(($result: any) => {
-        return $$createType7($result);
+        return $$createType8($result);
     });
 }
 
 export function ResolveUsers(teamID: string, userIDs: string[]): $CancellablePromise<shared$0.UserProfile[]> {
     return $Call.ByID(2167812529, teamID, userIDs).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType10($result);
     });
 }
 
@@ -53,14 +65,19 @@ export function SendMessage(teamID: string, channelID: string, blocks: string, t
     return $Call.ByID(300632422, teamID, channelID, blocks, threadTS);
 }
 
+export function SendTyping(teamID: string, channelID: string): $CancellablePromise<void> {
+    return $Call.ByID(2103488488, teamID, channelID);
+}
+
 // Private type creation functions
 const $$createType0 = shared$0.Channel.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = shared$0.Im.createFrom;
-const $$createType3 = $Create.Array($$createType2);
-const $$createType4 = shared$0.MessagesResponse.createFrom;
-const $$createType5 = $Create.Nullable($$createType4);
-const $$createType6 = shared$0.Emoji.createFrom;
-const $$createType7 = $Create.Array($$createType6);
-const $$createType8 = shared$0.UserProfile.createFrom;
-const $$createType9 = $Create.Array($$createType8);
+const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = $Create.Array($$createType0);
+const $$createType3 = shared$0.MessagesResponse.createFrom;
+const $$createType4 = $Create.Nullable($$createType3);
+const $$createType5 = shared$0.SearchResult.createFrom;
+const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = shared$0.Emoji.createFrom;
+const $$createType8 = $Create.Array($$createType7);
+const $$createType9 = shared$0.UserProfile.createFrom;
+const $$createType10 = $Create.Array($$createType9);

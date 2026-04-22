@@ -1,0 +1,103 @@
+.backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: color-mix(in srgb, var(--color-canvas) 80%, transparent);
+    z-index: 999;
+}
+
+.searchbar {
+    border: 1px solid var(--color-ink);
+    position: fixed;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+
+    background: var(--color-canvas);
+    border-radius: var(--radius-md);
+    z-index: 1000;
+    width: 50vw;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.input {
+    margin: 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-canvas);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    color: var(--color-ink);
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-muted);
+}
+
+.resultsWrapper {
+    position: relative;
+}
+
+.results {
+    display: flex;
+    flex-direction: column;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.results::-webkit-scrollbar {
+    display: none;
+}
+
+.resultItem {
+    padding: 12px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.selected {
+    background: var(--color-primary);
+    color: var(--color-canvas) !important;
+}
+
+.preSelected {
+    background: var(--color-canvas-raised);
+}
+
+.hint {
+    background: var(--color-primary-muted);
+    color: var(--color-ink);
+    font-size: var(--text-xs);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    align-self: start;
+}
+
+.resultInfo {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.resultName {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 700;
+    color: var(--color-ink);
+}
+
+.selected:hover .resultName,
+.selected.resultItem .resultName {
+    color: var(--color-canvas);
+}

@@ -7,6 +7,7 @@ import (
 	"fastslack/store"
 	"fmt"
 	"log"
+	"strings"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 )
@@ -14,6 +15,7 @@ import (
 type SlackService struct {
 	Client       *slack.Client
 	States       map[string]*store.WorkspaceState
+	RTMConns     map[string]*slack.RTMConnection
 	UserProfiles *lru.Cache[string, shared.UserProfile]
 	EmojiInfos   *lru.Cache[string, shared.Emoji]
 }
@@ -129,8 +131,15 @@ func (s *SlackService) Boot() error {
 			s.EmojiInfos = emojiCache
 		}
 
+		if s.RTMConns == nil {
+			s.RTMConns = make(map[string]*slack.RTMConnection)
+		}
+
 		// connect to websockets!!
-		_, err = s.Client.ConnectRTM(teamID, s.handleRTMEvent)
+		rtm, err := s.Client.ConnectRTM(teamID, s.handleRTMEvent)
+		if err == nil {
+			s.RTMConns[teamID] = rtm
+		}
 		if err != nil {
 			log.Printf("Failed to connect websocket for %s: %v\n", teamID, err)
 		}
@@ -173,16 +182,38 @@ func (s *SlackService) GetMessages(teamID, channelID, cursor string) (*shared.Me
 	return resp, nil
 }
 
-func (s *SlackService) GetIMs(teamID string) []shared.Im {
+func (s *SlackService) GetChannelInfo(teamID, channelID string) (*shared.Channel, error) {
+	state, ok := s.States[teamID]
+	if !ok {
+		return nil, fmt.Errorf("no state for team %s", teamID)
+	}
+	if ch, ok := state.Channels[channelID]; ok {
+		return &ch, nil
+	}
+	if im, ok := state.IMs[channelID]; ok {
+		return &im, nil
+	}
+	return nil, fmt.Errorf("channel %s not found", channelID)
+}
+
+func (s *SlackService) GetIMs(teamID string) []shared.Channel {
 	state, ok := s.States[teamID]
 	if !ok {
 		return nil
 	}
-	ims := make([]shared.Im, 0, len(state.IMs))
+	ims := make([]shared.Channel, 0, len(state.IMs))
 	for _, im := range state.IMs {
 		ims = append(ims, im)
 	}
 	return ims
+}
+
+func (s *SlackService) SendTyping(teamID, channelID string) error {
+	rtm, ok := s.RTMConns[teamID]
+	if !ok {
+		return fmt.Errorf("no RTM connection for team %s", teamID)
+	}
+	return rtm.SendTyping(channelID, 0)
 }
 
 func (s *SlackService) SendMessage(teamID, channelID string, blocks string, threadTS string) error {
@@ -213,4 +244,74 @@ func (c *SlackService) GetThreadMessages(teamID, channelID, threadTS, cursor str
 
 	go store.SaveMessages(teamID, channelID, resp.Messages)
 	return resp, nil
+}
+
+func (s *SlackService) QuickUserChannelSearch(teamID, query string) ([]shared.SearchResult, error) {
+	var results []shared.SearchResult
+	query = strings.ToLower(query)
+
+	var dmsUserIds []string
+	for _, im := range s.States[teamID].IMs {
+		dmsUserIds = append(dmsUserIds, im.User)
+	}
+
+	profiles, _ := s.ResolveUsers(teamID, dmsUserIds)
+
+	profileMap := make(map[string]shared.UserProfile)
+	for _, p := range profiles {
+		profileMap[p.ID] = p
+	}
+
+	seen := make(map[string]bool)
+	addResult := func(id, name, resType string) {
+		if !seen[id] && len(results) < 10 {
+			results = append(results, shared.SearchResult{
+				ChannelID: id,
+				Name:      name,
+				Type:      resType,
+			})
+			seen[id] = true
+		}
+	}
+
+	for _, ch := range s.States[teamID].Channels {
+		if strings.ToLower(ch.Name) == query {
+			addResult(ch.ID, ch.Name, "channel")
+		}
+	}
+
+	for _, im := range s.States[teamID].IMs {
+		if p, ok := profileMap[im.User]; ok {
+			if strings.ToLower(p.Profile.DisplayName) == query || strings.ToLower(p.Profile.RealName) == query {
+				name := p.Profile.DisplayName
+				if name == "" {
+					name = p.Profile.RealName
+				}
+				addResult(im.ID, name, "dm")
+			}
+		}
+	}
+
+	if len(results) < 10 {
+		for _, ch := range s.States[teamID].Channels {
+			if strings.Contains(strings.ToLower(ch.Name), query) {
+				addResult(ch.ID, ch.Name, "channel")
+			}
+		}
+
+		for _, im := range s.States[teamID].IMs {
+			if p, ok := profileMap[im.User]; ok {
+				if strings.Contains(strings.ToLower(p.Profile.DisplayName), query) ||
+					strings.Contains(strings.ToLower(p.Profile.RealName), query) {
+					name := p.Profile.DisplayName
+					if name == "" {
+						name = p.Profile.RealName
+					}
+					addResult(im.ID, name, "dm")
+				}
+			}
+		}
+	}
+
+	return results, nil
 }

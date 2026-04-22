@@ -15,6 +15,7 @@ import {
 } from "../../bindings/fastslack/slackservice";
 import { Events } from "@wailsio/runtime";
 import MessageItem from "./MessageItem";
+import DateDivider, { isDifferentDay } from "./DateDivider";
 import { chatStore, setChatStore, scrollPositions } from "../ChatStore";
 import SlickScrollbar from "./misc/Scrollbar";
 import ChatInput from "./ChatInput";
@@ -123,11 +124,13 @@ export default function MessageList(props: {
       const data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       if (data.channel !== props.channelID) return;
-      // Skip threaded replies — they belong in ThreadView, not the channel
       if (data.thread_ts && data.thread_ts !== data.ts) return;
       console.log("New message event received", data);
       const msg = data as Message;
-      setChatStore("messages", (prev) => [msg, ...prev]);
+      setChatStore("messages", (prev) => {
+        if (prev.some((m) => m.ts === msg.ts)) return prev;
+        return [msg, ...prev];
+      });
       fetchProfiles([msg]);
     });
 
@@ -159,6 +162,11 @@ export default function MessageList(props: {
 
   return (
     <div class={styles.container}>
+      <div class={styles.header}>
+        <span class={styles.title}>
+          {props.channelID === "D" ? "Direct Message" : `#${props.channelID}`}
+        </span>
+      </div>
       <div class={styles.listWrapper}>
         <div class={styles.list} ref={containerRef} onScroll={handleScroll}>
           <For each={messages()}>
@@ -172,27 +180,36 @@ export default function MessageList(props: {
                 const diff = parseFloat(msg.ts) - parseFloat(nextOlder().ts);
                 return diff > 180;
               };
+              const showDateDivider = () => {
+                if (!nextOlder()) return false;
+                return isDifferentDay(msg.ts, nextOlder().ts);
+              };
               return (
-                <MessageItem
-                  message={msg}
-                  profile={profiles()[msg.user]}
-                  showUser={showHeader()}
-                  workspaceID={props.teamID}
-                  onThreadClick={(message) =>
-                    setChatStore({
-                      threadTS: message.thread_ts || message.ts,
-                      threadParent: message,
-                      openThreads: {
-                        ...chatStore.openThreads,
-                        [props.channelID]: {
-                          threadTs: message.thread_ts || message.ts,
-                          threadParent: message,
+                <>
+                  <MessageItem
+                    message={msg}
+                    profile={profiles()[msg.user]}
+                    showUser={showHeader()}
+                    workspaceID={props.teamID}
+                    onThreadClick={(message) =>
+                      setChatStore({
+                        threadTS: message.thread_ts || message.ts,
+                        threadParent: message,
+                        openThreads: {
+                          ...chatStore.openThreads,
+                          [props.channelID]: {
+                            threadTs: message.thread_ts || message.ts,
+                            threadParent: message,
+                          },
                         },
-                      },
-                    })
-                  }
-                  showThreadButton={true}
-                />
+                      })
+                    }
+                    showThreadButton={true}
+                  />
+                  <Show when={showDateDivider()}>
+                    <DateDivider ts={nextOlder()!.ts} />
+                  </Show>
+                </>
               );
             }}
           </For>

@@ -1,0 +1,20 @@
+.dateDivider {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+}
+
+.line {
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+
+.label {
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-ink-muted);
+    white-space: nowrap;
+}

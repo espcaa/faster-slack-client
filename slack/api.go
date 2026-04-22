@@ -145,6 +145,8 @@ func (c *Client) GetThreadReplies(teamID, channelID, threadTS, cursor string) (*
 	params := url.Values{}
 	params.Set("channel", channelID)
 	params.Set("ts", threadTS)
+	params.Set("oldest", threadTS)
+	params.Set("inclusive", "true")
 	params.Set("limit", "28")
 	if cursor != "" {
 		params.Set("cursor", cursor)
@@ -182,3 +184,5 @@ func (c *Client) GetThreadReplies(teamID, channelID, threadTS, cursor string) (*
 		NextCursor: resp.Metadata.NextCursor,
 	}, nil
 }
+
+

@@ -4,7 +4,6 @@
     width: 400px;
     min-width: 400px;
     height: 100%;
-    border-left: 1px solid var(--color-border);
     background: var(--color-canvas);
 }
 
@@ -41,6 +40,7 @@
     position: relative;
     flex: 1;
     overflow: hidden;
+    border-left: 1px solid var(--color-border);
 }
 
 .list {

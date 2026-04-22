@@ -12,7 +12,7 @@ import (
 type WorkspaceState struct {
 	MinChannelUpdated int64                     `json:"min_channel_updated"`
 	Channels          map[string]shared.Channel `json:"channels"`
-	IMs               map[string]shared.Im      `json:"ims"`
+	IMs               map[string]shared.Channel `json:"ims"`
 }
 
 func cacheDir() string {
@@ -58,7 +58,7 @@ func StateFromBoot(resp *shared.UserbootResponse) *WorkspaceState {
 		channels[ch.ID] = ch
 	}
 
-	ims := make(map[string]shared.Im, len(resp.Ims))
+	ims := make(map[string]shared.Channel, len(resp.Ims))
 	for _, im := range resp.Ims {
 		ims[im.ID] = im
 	}

@@ -54,7 +54,7 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 			log.Printf("New message in team %s: %s", teamID, event.Text)
 			store.UpsertMessage(teamID, event.Channel, shared.Message{
 				Ts:       event.Ts,
-				User:     string(event.User),
+				User:     event.UserID(),
 				Text:     event.Text,
 				Type:     event.Type,
 				Team:     event.Team,
@@ -67,6 +67,8 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 			// send event to frontend
 			app.Event.Emit("slack:message", string(event.Raw))
 		}
+	case "user_typing":
+		app.Event.Emit("slack:user_typing", string(event.Raw))
 	case "pong":
 		log.Printf("We got a pong from team %s :scheming:", teamID)
 	default:

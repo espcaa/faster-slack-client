@@ -31,7 +31,7 @@ export default function Sidebar(props: Props) {
   const [profiles] = createResource(
     () => ims(),
     async (currentIms) => {
-      const userIDs = currentIms.map((im) => im.user);
+      const userIDs = currentIms.map((im) => im.user).filter((id): id is string => !!id);
       if (userIDs.length === 0) return {};
 
       try {
@@ -53,7 +53,7 @@ export default function Sidebar(props: Props) {
   const sortedChannels = () =>
     (channels() ?? [])
       .filter((c) => !c.is_archived)
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
 
   const sortedIMs = () =>
     (ims() ?? [])
@@ -118,7 +118,7 @@ export default function Sidebar(props: Props) {
               >
                 <Show when={profiles()} fallback={im.user}>
                   {(data) => {
-                    const user = data()[im.user];
+                    const user = im.user ? data()[im.user] : undefined;
                     return (
                       <div class={styles.dmItem}>
                         <Show when={user}>
