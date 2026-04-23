@@ -19,6 +19,7 @@ import { Events } from "@wailsio/runtime";
 import MessageItem from "./MessageItem";
 import DateDivider, { isDifferentDay } from "./DateDivider";
 import { setChatStore } from "../ChatStore";
+import ChatInput from "./ChatInput";
 
 const threadScrollPositions = new Map<string, number>();
 
@@ -246,6 +247,7 @@ export default function ThreadView(props: {
           <Show when={fetchingOlder()}>
             <div class={styles.loading}>Loading more replies...</div>
           </Show>
+          <ChatInput teamID={props.teamID} channelID={props.channelID} threadTS={threadTS()} />
         </div>
         <Scrollbar container={containerRef} />
       </div>

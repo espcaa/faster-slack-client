@@ -12,6 +12,15 @@ export function isDifferentDay(ts1: string, ts2: string): boolean {
 
 function formatDateDivider(ts: string): string {
   const date = new Date(parseFloat(ts) * 1000);
+  // if it's today, show "Today"
+  const today = new Date();
+  if (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  ) {
+    return "Today";
+  }
   return date.toLocaleDateString([], {
     weekday: "long",
     month: "long",

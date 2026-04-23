@@ -1,7 +1,19 @@
-import { createSignal, createEffect, onMount, onCleanup, Show } from "solid-js";
-import { SendMessage, SendTyping } from "../../bindings/fastslack/slackservice";
+import {
+  createSignal,
+  createEffect,
+  onMount,
+  onCleanup,
+  Show,
+  createResource,
+} from "solid-js";
+import {
+  ResolveUsers,
+  SendMessage,
+  SendTyping,
+} from "../../bindings/fastslack/slackservice";
 import styles from "./ChatInput.module.css";
 import { Events } from "@wailsio/runtime";
+import { useAuth } from "../AuthContext";
 
 export default function ChatInput(props: {
   teamID: string;
@@ -10,6 +22,7 @@ export default function ChatInput(props: {
 }) {
   const [text, setText] = createSignal("");
   const [typingUsers, setTypingUsers] = createSignal(new Map<string, number>());
+  const workspace = useAuth().workspace;
 
   createEffect(() => {
     props.channelID;
@@ -28,7 +41,7 @@ export default function ChatInput(props: {
     const now = Date.now();
     if (now - lastTypingSent < 3000) return;
     lastTypingSent = now;
-    SendTyping(props.teamID, props.channelID);
+    SendTyping(props.teamID, props.channelID, props.threadTS ?? "");
   };
 
   const send = async () => {
@@ -55,10 +68,30 @@ export default function ChatInput(props: {
         props.threadTS ?? "",
       );
       setText("");
+      if (inputRef) inputRef.value = "";
     } catch (e) {
       console.error("Failed to send message", e);
     }
   };
+
+  const [typingText] = createResource(
+    () => ({ ws: workspace(), users: Array.from(typingUsers().keys()) }),
+    async ({ ws, users }) => {
+      if (users.length === 0) return null;
+
+      const userProfiles = await ResolveUsers(ws || "", users);
+      const displayNames = userProfiles
+        .map(
+          (u) =>
+            u.profile.display_name || u.profile.real_name || "Unknown User",
+        )
+        .join(", ");
+
+      const count = users.length;
+      const suffix = count > 3 ? "and others are" : count === 1 ? "is" : "are";
+      return `${displayNames} ${suffix} typing...`;
+    },
+  );
 
   onMount(() => {
     const timers = new Map<string, number>();
@@ -67,6 +100,7 @@ export default function ChatInput(props: {
       const data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       if (data.channel !== props.channelID) return;
+      if ((data.thread_ts ?? "") !== (props.threadTS ?? "")) return;
       setTypingUsers((prev) => {
         const newMap = new Map(prev);
         newMap.set(data.user, Date.now());
@@ -118,15 +152,7 @@ export default function ChatInput(props: {
       />
       <div class={styles.typingIndicator}>
         <p>
-          <Show when={typingUsers().size > 0}>
-            {Array.from(typingUsers().keys()).slice(0, 3).join(", ")}{" "}
-            {typingUsers().size > 3
-              ? "and others are"
-              : typingUsers().size === 1
-                ? "is"
-                : "are"}{" "}
-            typing...
-          </Show>
+          <Show when={typingUsers().size > 0}>{typingText()}</Show>
         </p>
       </div>
     </div>

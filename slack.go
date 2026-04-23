@@ -208,12 +208,12 @@ func (s *SlackService) GetIMs(teamID string) []shared.Channel {
 	return ims
 }
 
-func (s *SlackService) SendTyping(teamID, channelID string) error {
+func (s *SlackService) SendTyping(teamID, channelID, threadTS string) error {
 	rtm, ok := s.RTMConns[teamID]
 	if !ok {
 		return fmt.Errorf("no RTM connection for team %s", teamID)
 	}
-	return rtm.SendTyping(channelID, 0)
+	return rtm.SendTyping(channelID, threadTS, 0)
 }
 
 func (s *SlackService) SendMessage(teamID, channelID string, blocks string, threadTS string) error {

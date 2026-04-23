@@ -207,7 +207,7 @@ export default function MessageList(props: {
                     showThreadButton={true}
                   />
                   <Show when={showDateDivider()}>
-                    <DateDivider ts={nextOlder()!.ts} />
+                    <DateDivider ts={msg.ts} />
                   </Show>
                 </>
               );

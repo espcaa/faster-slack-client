@@ -65,8 +65,8 @@ export function SendMessage(teamID: string, channelID: string, blocks: string, t
     return $Call.ByID(300632422, teamID, channelID, blocks, threadTS);
 }
 
-export function SendTyping(teamID: string, channelID: string): $CancellablePromise<void> {
-    return $Call.ByID(2103488488, teamID, channelID);
+export function SendTyping(teamID: string, channelID: string, threadTS: string): $CancellablePromise<void> {
+    return $Call.ByID(2103488488, teamID, channelID, threadTS);
 }
 
 // Private type creation functions

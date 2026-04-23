@@ -29,12 +29,12 @@ func (e RTMEvent) UserID() string {
 	if len(e.User) == 0 {
 		return ""
 	}
-	// Try string first (e.g., "U12345")
+
 	var s string
 	if json.Unmarshal(e.User, &s) == nil {
 		return s
 	}
-	// Fall back to object with "id" field
+
 	var obj struct {
 		ID string `json:"id"`
 	}
@@ -160,8 +160,12 @@ func (rtm *RTMConnection) reconnect() {
 	}
 }
 
-func (rtm *RTMConnection) SendTyping(channelID string, id int) error {
-	msg, _ := json.Marshal(map[string]any{"type": "user_typing", "channel": channelID, "id": id})
+func (rtm *RTMConnection) SendTyping(channelID string, threadTS string, id int) error {
+	payload := map[string]any{"type": "user_typing", "channel": channelID, "id": id}
+	if threadTS != "" {
+		payload["thread_ts"] = threadTS
+	}
+	msg, _ := json.Marshal(payload)
 	return rtm.conn.Write(rtm.ctx, websocket.MessageText, msg)
 }
 
