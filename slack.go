@@ -216,12 +216,22 @@ func (s *SlackService) SendTyping(teamID, channelID, threadTS string) error {
 	return rtm.SendTyping(channelID, threadTS, 0)
 }
 
-func (s *SlackService) SendMessage(teamID, channelID string, blocks string, threadTS string) error {
+func (s *SlackService) SendMessage(teamID, channelID string, blocks string, threadTS string) (string, error) {
 	if s.Client == nil {
-		return fmt.Errorf("not connected")
+		return "", fmt.Errorf("not connected")
 	}
-	_, err := s.Client.SendMessage(teamID, channelID, json.RawMessage(blocks), threadTS)
-	return err
+	resp, err := s.Client.SendMessage(teamID, channelID, json.RawMessage(blocks), threadTS)
+	if err != nil {
+		return "", err
+	}
+	type MessageResponse struct {
+		TS string `json:"ts"`
+	}
+	var msgResp MessageResponse
+	if err := json.Unmarshal(resp, &msgResp); err != nil {
+		return "", err
+	}
+	return msgResp.TS, nil
 }
 
 func (c *SlackService) GetThreadMessages(teamID, channelID, threadTS, cursor string) (*shared.MessagesResponse, error) {

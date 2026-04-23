@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fastslack/shared"
 	"path/filepath"
+	"slices"
 	"sync"
 
 	_ "modernc.org/sqlite"
@@ -185,6 +186,44 @@ func UpsertMessage(teamID, channelID string, msg shared.Message) error {
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, teamID, channelID, msg.Ts, msg.User, msg.Text, msg.Type, msg.Subtype, msg.Team, msg.ThreadTs,
 		msg.ReplyCount, msg.LatestReply, encodeReplyUsers(msg.ReplyUsers), string(msg.Blocks), string(msg.Edited), string(msg.Raw))
+	return err
+}
+
+func IncrementReplyCount(teamID, channelID, parentTS, replyTS, replyUser string) error {
+	db, err := openMessageDB()
+	if err != nil {
+		return err
+	}
+
+	// update reply_count and latest_reply of the parent message
+	_, err = db.Exec(`
+		UPDATE messages
+		SET reply_count = reply_count + 1,
+		    latest_reply = ?
+		WHERE team_id = ? AND channel_id = ? AND ts = ? AND (thread_ts = '' OR thread_ts = ts)
+	`, replyTS, teamID, channelID, parentTS)
+	if err != nil {
+		return err
+	}
+
+	// add  reply_users if it's not in it
+	var raw string
+	row := db.QueryRow(`
+		SELECT reply_users FROM messages
+		WHERE team_id = ? AND channel_id = ? AND ts = ? AND (thread_ts = '' OR thread_ts = ts)
+	`, teamID, channelID, parentTS)
+	if err := row.Scan(&raw); err != nil {
+		return nil
+	}
+	users := decodeReplyUsers(raw)
+	if slices.Contains(users, replyUser) {
+		return nil
+	}
+	users = append(users, replyUser)
+	_, err = db.Exec(`
+		UPDATE messages SET reply_users = ?
+		WHERE team_id = ? AND channel_id = ? AND ts = ? AND (thread_ts = '' OR thread_ts = ts)
+	`, encodeReplyUsers(users), teamID, channelID, parentTS)
 	return err
 }
 

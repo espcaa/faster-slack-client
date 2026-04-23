@@ -62,6 +62,13 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 				Raw:      event.Raw,
 			})
 
+			// increment reply count if it's a reply
+			if event.ThreadTs != "" && event.ThreadTs != event.Ts {
+				if err := store.IncrementReplyCount(teamID, event.Channel, event.ThreadTs, event.Ts, event.UserID()); err != nil {
+					log.Printf("Failed to increment reply count: %v", err)
+				}
+			}
+
 			log.Printf("Message stored in database for team %s: %s", teamID, event.Text)
 
 			// send event to frontend

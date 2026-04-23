@@ -19,23 +19,20 @@ function ThreadRepliesButton(props: {
   };
 
   const [profiles, setProfiles] = createSignal<Record<string, UserProfile>>({});
-  let firstThreeReplyUsers = props.message.reply_users
-    ? props.message.reply_users.slice(0, 3)
-    : [];
+  const firstThreeReplyUsers = () =>
+    props.message.reply_users ? props.message.reply_users.slice(0, 3) : [];
 
-  const getReplyUsers = async () => {
-    let userProfiles = await ResolveUsers(
-      props.workspaceID,
-      firstThreeReplyUsers,
-    );
+  const getReplyUsers = async (userIds: string[]) => {
+    let userProfiles = await ResolveUsers(props.workspaceID, userIds);
     const profileMap: Record<string, UserProfile> = {};
     for (const p of userProfiles) profileMap[p.id] = p;
-    setProfiles(profileMap);
+    setProfiles((prev) => ({ ...prev, ...profileMap }));
   };
 
   createEffect(() => {
-    if (props.message.reply_users && props.message.reply_users.length > 0) {
-      getReplyUsers();
+    const users = firstThreeReplyUsers();
+    if (users.length > 0) {
+      getReplyUsers(users);
     }
   });
 
@@ -43,7 +40,7 @@ function ThreadRepliesButton(props: {
     <button class={styles.threadRepliesButton} onClick={props.onClick}>
       <div class={styles.insideContainer}>
         <div class={styles.pfpContainer}>
-          <For each={firstThreeReplyUsers}>
+          <For each={firstThreeReplyUsers()}>
             {(userID) => (
               <img
                 src={getAvatarUrl(profiles()[userID])}

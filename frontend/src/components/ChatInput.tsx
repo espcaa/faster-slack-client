@@ -14,6 +14,8 @@ import {
 import styles from "./ChatInput.module.css";
 import { Events } from "@wailsio/runtime";
 import { useAuth } from "../AuthContext";
+import { Message } from "../../bindings/fastslack/shared";
+import { setChatStore } from "../ChatStore";
 
 export default function ChatInput(props: {
   teamID: string;
@@ -22,7 +24,7 @@ export default function ChatInput(props: {
 }) {
   const [text, setText] = createSignal("");
   const [typingUsers, setTypingUsers] = createSignal(new Map<string, number>());
-  const workspace = useAuth().workspace;
+  const { workspace, session } = useAuth();
 
   createEffect(() => {
     props.channelID;
@@ -44,11 +46,11 @@ export default function ChatInput(props: {
     SendTyping(props.teamID, props.channelID, props.threadTS ?? "");
   };
 
-  const send = async () => {
+  const send = () => {
     const val = text().trim();
     if (!val) return;
 
-    const blocks = JSON.stringify([
+    const blocksArray = [
       {
         type: "rich_text",
         elements: [
@@ -58,20 +60,39 @@ export default function ChatInput(props: {
           },
         ],
       },
-    ]);
+    ];
+    const blocks = JSON.stringify(blocksArray);
 
-    try {
-      await SendMessage(
-        props.teamID,
-        props.channelID,
-        blocks,
-        props.threadTS ?? "",
-      );
-      setText("");
-      if (inputRef) inputRef.value = "";
-    } catch (e) {
+    // we are optimistic here
+    const tempTS = `${Date.now() / 1000}.pending`;
+    const userID = session()?.workspaces[props.teamID]?.user_id ?? "";
+    const optimisticMessage = new Message({
+      user: userID,
+      text: val,
+      ts: tempTS,
+      blocks: blocksArray as any,
+      type: "message",
+      thread_ts: props.threadTS,
+    });
+
+    setChatStore("messages", (prev) => [optimisticMessage, ...prev]);
+
+    const previousText = val;
+    setText("");
+    if (inputRef) inputRef.value = "";
+
+    SendMessage(
+      props.teamID,
+      props.channelID,
+      blocks,
+      props.threadTS ?? "",
+    ).catch((e) => {
       console.error("Failed to send message", e);
-    }
+      setChatStore("messages", (prev) => prev.filter((m) => m.ts !== tempTS));
+      setText(previousText);
+      if (inputRef) inputRef.value = previousText;
+      alert("Message failed to send. Please try again.");
+    });
   };
 
   const [typingText] = createResource(
@@ -152,7 +173,9 @@ export default function ChatInput(props: {
       />
       <div class={styles.typingIndicator}>
         <p>
-          <Show when={typingUsers().size > 0}>{typingText()}</Show>
+          <Show fallback={"⠀"} when={typingUsers().size > 0}>
+            {typingText()}
+          </Show>
         </p>
       </div>
     </div>

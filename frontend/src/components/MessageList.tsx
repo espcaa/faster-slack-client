@@ -124,12 +124,35 @@ export default function MessageList(props: {
       const data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       if (data.channel !== props.channelID) return;
-      if (data.thread_ts && data.thread_ts !== data.ts) return;
+
+      // we need to update the parent message's reply count and latest_reply when a new thread reply is posted
+      if (data.thread_ts && data.thread_ts !== data.ts) {
+        setChatStore(
+          "messages",
+          (m) => m.ts === data.thread_ts,
+          (parent) => ({
+            ...parent,
+            reply_count: (parent.reply_count || 0) + 1,
+            latest_reply: data.ts,
+            reply_users: parent.reply_users
+              ? parent.reply_users.includes(data.user)
+                ? parent.reply_users
+                : [...parent.reply_users, data.user]
+              : [data.user],
+          }),
+        );
+        return;
+      }
+
       console.log("New message event received", data);
       const msg = data as Message;
       setChatStore("messages", (prev) => {
         if (prev.some((m) => m.ts === msg.ts)) return prev;
-        return [msg, ...prev];
+        // Remove any optimistic (pending) message from the same user with the same text
+        const filtered = prev.filter(
+          (m) => !(m.ts.includes(".pending") && m.user === msg.user && m.text === msg.text),
+        );
+        return [msg, ...filtered];
       });
       fetchProfiles([msg]);
     });

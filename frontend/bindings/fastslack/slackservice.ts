@@ -61,7 +61,7 @@ export function ResolveUsers(teamID: string, userIDs: string[]): $CancellablePro
     });
 }
 
-export function SendMessage(teamID: string, channelID: string, blocks: string, threadTS: string): $CancellablePromise<void> {
+export function SendMessage(teamID: string, channelID: string, blocks: string, threadTS: string): $CancellablePromise<string> {
     return $Call.ByID(300632422, teamID, channelID, blocks, threadTS);
 }
 
