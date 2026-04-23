@@ -5,16 +5,14 @@ import {
   ResolveUsers,
 } from "../../bindings/fastslack/slackservice";
 import { Logout } from "../../bindings/fastslack/slackauthservice";
-import { chatStore, setChatStore } from "../ChatStore";
 import Scrollbar from "./misc/Scrollbar";
 import styles from "./Sidebar.module.css";
 import { GetAvatarUrl } from "../utils/pfp";
 import { MdRoundLock } from "solid-icons/md";
+import { useNavigation } from "../NavigationContext";
 
 interface Props {
   teamID: string;
-  onSelectChannel: (id: string) => void;
-  selectedChannel?: string | null;
 }
 
 export default function Sidebar(props: Props) {
@@ -31,7 +29,9 @@ export default function Sidebar(props: Props) {
   const [profiles] = createResource(
     () => ims(),
     async (currentIms) => {
-      const userIDs = currentIms.map((im) => im.user).filter((id): id is string => !!id);
+      const userIDs = currentIms
+        .map((im) => im.user)
+        .filter((id): id is string => !!id);
       if (userIDs.length === 0) return {};
 
       try {
@@ -64,15 +64,6 @@ export default function Sidebar(props: Props) {
         return bTime - aTime;
       });
 
-  const selectChannel = (id: string) => {
-    props.onSelectChannel(id);
-    if (chatStore.openThreads[id]) {
-      setChatStore({ threadParent: chatStore.openThreads[id].threadParent });
-    } else {
-      setChatStore({ threadParent: null });
-    }
-  };
-
   return (
     <div class={styles.sidebar}>
       <div class={styles.scrollArea} ref={(el) => setScrollEl(el)}>
@@ -86,9 +77,9 @@ export default function Sidebar(props: Props) {
               <div
                 class={styles.item}
                 classList={{
-                  [styles.active]: props.selectedChannel === ch.id,
+                  [styles.active]: useNavigation().selectedChannel() === ch.id,
                 }}
-                onClick={() => selectChannel(ch.id)}
+                onClick={() => useNavigation().selectChannel(ch.id)}
               >
                 <Show when={ch.is_private}>
                   <span class={styles.lock} title="Private channel">
@@ -113,8 +104,10 @@ export default function Sidebar(props: Props) {
             {(im) => (
               <div
                 class={styles.item}
-                onClick={() => selectChannel(im.id)}
-                classList={{ [styles.active]: props.selectedChannel === im.id }}
+                onClick={() => useNavigation().selectChannel(im.id)}
+                classList={{
+                  [styles.active]: useNavigation().selectedChannel() === im.id,
+                }}
               >
                 <Show when={profiles()} fallback={im.user}>
                   {(data) => {

@@ -12,13 +12,9 @@ import { SearchResult } from "../../bindings/fastslack/shared";
 import { QuickUserChannelSearch } from "../../bindings/fastslack/slackservice";
 import { useAuth } from "../AuthContext";
 import SlickScrollbar from "./misc/Scrollbar";
-import { setChatStore } from "../ChatStore";
+import { useNavigation } from "../NavigationContext";
 
-interface Props {
-  onSelectChannel: (channelID: string) => void;
-}
-
-export default function SearchBar(props: Props) {
+export default function SearchBar() {
   const [visible, setVisible] = createSignal(false);
   const [query, setQuery] = createSignal("");
   const [results, setResults] = createSignal<SearchResult[]>([]);
@@ -37,8 +33,7 @@ export default function SearchBar(props: Props) {
   function selectResult(idx: number) {
     const r = results()[idx];
     if (!r) return;
-    setChatStore({ threadTS: null, threadParent: null });
-    props.onSelectChannel(r.ChannelID);
+    useNavigation().selectChannel(r.ChannelID);
     cleanUp();
   }
 

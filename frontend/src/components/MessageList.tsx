@@ -150,7 +150,12 @@ export default function MessageList(props: {
         if (prev.some((m) => m.ts === msg.ts)) return prev;
         // Remove any optimistic (pending) message from the same user with the same text
         const filtered = prev.filter(
-          (m) => !(m.ts.includes(".pending") && m.user === msg.user && m.text === msg.text),
+          (m) =>
+            !(
+              m.ts.includes(".pending") &&
+              m.user === msg.user &&
+              m.text === msg.text
+            ),
         );
         return [msg, ...filtered];
       });
@@ -210,6 +215,7 @@ export default function MessageList(props: {
               return (
                 <>
                   <MessageItem
+                    channelID={props.channelID}
                     message={msg}
                     profile={profiles()[msg.user]}
                     showUser={showHeader()}

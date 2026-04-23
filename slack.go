@@ -325,3 +325,16 @@ func (s *SlackService) QuickUserChannelSearch(teamID, query string) ([]shared.Se
 
 	return results, nil
 }
+
+func (s *SlackService) GetIMByUserID(teamID, userID string) (*shared.Channel, error) {
+	state, ok := s.States[teamID]
+	if !ok {
+		return nil, fmt.Errorf("no state for team %s", teamID)
+	}
+	for _, im := range state.IMs {
+		if im.User == userID {
+			return &im, nil
+		}
+	}
+	return nil, fmt.Errorf("IM with user %s not found", userID)
+}

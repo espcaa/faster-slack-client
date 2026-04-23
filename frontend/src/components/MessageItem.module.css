@@ -1,4 +1,5 @@
 .message {
+    position: relative;
     min-width: 0;
     overflow-wrap: break-word;
     word-break: break-word;
@@ -82,4 +83,19 @@
 .timeRight {
     font-size: var(--text-xs);
     margin-top: 2px;
+}
+
+.message:hover .actionsWrapper {
+    opacity: 1;
+    visibility: visible;
+}
+
+.actionsWrapper {
+    position: absolute;
+    top: -16px;
+    right: 20px;
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.1s ease-in-out;
 }

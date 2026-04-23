@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { Show } from "solid-js";
 import { useAuth } from "../AuthContext";
 import styles from "./Home.module.css";
 import MessageList from "../components/MessageList";
@@ -6,36 +6,32 @@ import { chatStore } from "../ChatStore";
 import ThreadView from "../components/ThreadView";
 import Sidebar from "../components/Sidebar";
 import SearchBar from "../components/Searchbar";
+import { useNavigation } from "../NavigationContext";
 
 export default function Home() {
   const { workspace } = useAuth();
 
-  const [selectedChannel, setSelectedChannel] = createSignal<string | null>(
-    null,
-  );
-
   return (
     <div class={styles.layout}>
-      <SearchBar onSelectChannel={setSelectedChannel} />
-      <Sidebar
-        teamID={workspace()!}
-        onSelectChannel={setSelectedChannel}
-        selectedChannel={selectedChannel()}
-      />
+      <SearchBar />
+      <Sidebar teamID={workspace()!} />
 
       <div class={styles.main}>
         <Show
-          when={selectedChannel()}
+          when={useNavigation().selectedChannel()}
           fallback={<span class={styles.placeholder}>Select a channel</span>}
         >
-          <MessageList teamID={workspace()!} channelID={selectedChannel()!} />
+          <MessageList
+            teamID={workspace()!}
+            channelID={useNavigation().selectedChannel()!}
+          />
         </Show>
       </div>
       <Show when={chatStore.threadParent}>
         {(parent) => (
           <ThreadView
             teamID={workspace()!}
-            channelID={selectedChannel()!}
+            channelID={useNavigation().selectedChannel()!}
             parentMessage={parent()}
           />
         )}

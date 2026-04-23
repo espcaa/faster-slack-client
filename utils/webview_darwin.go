@@ -127,6 +127,21 @@ void setNavDelegate(void* windowPtr, void (*callback)(const char*)) {
         wv.configuration.websiteDataStore = dataStore;
     });
 }
+
+void removeNavDelegate(void* windowPtr) {
+    if (!delegateRefs) return;
+    WebviewWindow* win = (__bridge WebviewWindow*)windowPtr;
+    WKWebView* wv = win.webView;
+    if (wv == nil) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        id currentDelegate = wv.navigationDelegate;
+        if (currentDelegate) {
+            [delegateRefs removeObject:currentDelegate];
+        }
+        wv.navigationDelegate = nil;
+        wv.UIDelegate = nil;
+    });
+}
 */
 import "C"
 import (
@@ -166,6 +181,14 @@ func InterceptSlackURL(window application.Window, handler func(string)) {
 		return
 	}
 	C.setNavDelegate(ptr, (*[0]byte)(C.slackURLCallback))
+}
+
+func CleanupNavDelegate(window application.Window) {
+	ptr := window.NativeWindow()
+	if ptr == nil {
+		return
+	}
+	C.removeNavDelegate(ptr)
 }
 
 func GetAllCookies(window application.Window, callback func([]shared.Cookie, error)) {

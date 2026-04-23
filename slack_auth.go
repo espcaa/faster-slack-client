@@ -97,6 +97,7 @@ func (s *SlackAuthService) StartLogin() {
 	})
 
 	s.loginWindow.OnWindowEvent(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		utils.CleanupNavDelegate(s.loginWindow)
 		app.Event.Emit("auth:loading", false)
 	})
 

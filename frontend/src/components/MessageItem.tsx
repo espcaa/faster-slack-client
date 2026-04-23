@@ -11,6 +11,7 @@ import { GetAvatarUrl } from "../utils/pfp";
 import UserProfileCardTrigger from "./misc/UserProfileCardTrigger";
 import EditedIndicator from "./misc/EditedIndicator";
 import FileContainer from "./FilesContainer";
+import MessageActions from "./MessageActions";
 
 export default function MessageItem(props: {
   message: Message;
@@ -19,6 +20,7 @@ export default function MessageItem(props: {
   workspaceID: string;
   onThreadClick?: (message: Message) => void;
   showThreadButton: boolean;
+  channelID: string;
 }) {
   return (
     <div class={`${styles.message} ${props.showUser ? styles.groupStart : ""}`}>
@@ -91,6 +93,16 @@ export default function MessageItem(props: {
             onClick={() => props.onThreadClick?.(props.message)}
           />
         </Show>
+        <div class={styles.actionsWrapper}>
+          <MessageActions
+            message={props.message}
+            channelID={props.channelID}
+            canOpenThread={
+              props.message.thread_ts == undefined ||
+              (props.message.reply_count || 0) > 0
+            }
+          />
+        </div>
       </div>
     </div>
   );

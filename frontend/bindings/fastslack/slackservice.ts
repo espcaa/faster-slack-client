@@ -25,6 +25,12 @@ export function GetChannels(teamID: string): $CancellablePromise<shared$0.Channe
     });
 }
 
+export function GetIMByUserID(teamID: string, userID: string): $CancellablePromise<shared$0.Channel | null> {
+    return $Call.ByID(1234218370, teamID, userID).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
 export function GetIMs(teamID: string): $CancellablePromise<shared$0.Channel[]> {
     return $Call.ByID(2667984826, teamID).then(($result: any) => {
         return $$createType2($result);

@@ -126,8 +126,7 @@ export default function ThreadView(props: {
     const el = e.currentTarget as HTMLDivElement;
     threadScrollPositions.set(threadTS(), el.scrollTop);
 
-    const nearBottom =
-      el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
     if (nearBottom && !fetchingOlder()) {
       loadOlderReplies();
     }
@@ -222,6 +221,7 @@ export default function ThreadView(props: {
                     <DateDivider ts={msg.ts} />
                   </Show>
                   <MessageItem
+                    channelID={props.channelID}
                     message={msg}
                     profile={profiles()[msg.user]}
                     showUser={showHeader()}
@@ -247,7 +247,11 @@ export default function ThreadView(props: {
           <Show when={fetchingOlder()}>
             <div class={styles.loading}>Loading more replies...</div>
           </Show>
-          <ChatInput teamID={props.teamID} channelID={props.channelID} threadTS={threadTS()} />
+          <ChatInput
+            teamID={props.teamID}
+            channelID={props.channelID}
+            threadTS={threadTS()}
+          />
         </div>
         <Scrollbar container={containerRef} />
       </div>
