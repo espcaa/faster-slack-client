@@ -12,6 +12,7 @@ import UserProfileCardTrigger from "./misc/UserProfileCardTrigger";
 import EditedIndicator from "./misc/EditedIndicator";
 import FileContainer from "./FilesContainer";
 import MessageActions from "./MessageActions";
+import { useAuth } from "../AuthContext";
 
 export type ThreadContext = "list" | "thread";
 
@@ -26,6 +27,10 @@ export default function MessageItem(props: {
   threadContext: ThreadContext;
   channelID: string;
 }) {
+  const { session, workspace } = useAuth();
+
+  const userID = session()?.workspaces[workspace()!]?.user_id ?? "";
+
   const inList = () => props.threadContext === "list";
   const showInlineReplies = () =>
     inList() && (props.message.reply_count ?? 0) > 0;
@@ -98,6 +103,7 @@ export default function MessageItem(props: {
           <MessageActions
             message={props.message}
             channelID={props.channelID}
+            canDelete={props.message.user === userID}
             canOpenThread={inList()}
           />
         </div>

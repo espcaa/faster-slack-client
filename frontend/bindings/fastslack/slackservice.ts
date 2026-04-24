@@ -13,6 +13,10 @@ export function Boot(): $CancellablePromise<void> {
     return $Call.ByID(380504861);
 }
 
+export function DeleteMessage(teamID: string, channelID: string, threadTs: string, ts: string): $CancellablePromise<void> {
+    return $Call.ByID(3311734089, teamID, channelID, threadTs, ts);
+}
+
 export function GetChannelInfo(teamID: string, channelID: string): $CancellablePromise<shared$0.Channel | null> {
     return $Call.ByID(1382314158, teamID, channelID).then(($result: any) => {
         return $$createType1($result);

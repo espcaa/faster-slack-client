@@ -185,4 +185,11 @@ func (c *Client) GetThreadReplies(teamID, channelID, threadTS, cursor string) (*
 	}, nil
 }
 
+func (c *Client) DeleteMessage(teamID, channelID, ts string) error {
+	params := url.Values{}
+	params.Set("channel", channelID)
+	params.Set("ts", ts)
 
+	_, err := c.Do(teamID, "chat.delete", params)
+	return err
+}

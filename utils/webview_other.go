@@ -14,3 +14,4 @@ func InterceptSlackURL(window application.Window, handler func(string)) {}
 func GetAllCookies(window application.Window, callback func([]shared.Cookie, error)) {
 	callback(nil, nil)
 }
+func CleanupNavDelegate(window application.Window) {}

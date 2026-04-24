@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type SlackService struct {
@@ -337,4 +338,32 @@ func (s *SlackService) GetIMByUserID(teamID, userID string) (*shared.Channel, er
 		}
 	}
 	return nil, fmt.Errorf("IM with user %s not found", userID)
+}
+
+func (s *SlackService) DeleteMessage(teamID, channelID, threadTs, ts string) error {
+	if err := s.Client.DeleteMessage(teamID, channelID, ts); err != nil {
+		return fmt.Errorf("failed to delete message: %w", err)
+	}
+
+	if err := store.DeleteMessage(teamID, channelID, threadTs, ts); err != nil {
+		log.Printf("Failed to delete message from database: %v", err)
+	}
+
+	payload, err := json.Marshal(map[string]string{
+		"type":       "message",
+		"subtype":    "message_deleted",
+		"channel":    channelID,
+		"deleted_ts": ts,
+		"thread_ts":  threadTs,
+		"ts":         ts,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to marshal message_deleted event: %w", err)
+	}
+
+	if app := application.Get(); app != nil {
+		app.Event.Emit("slack:message_deleted", string(payload))
+	}
+
+	return nil
 }
