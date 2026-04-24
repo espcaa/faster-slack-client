@@ -49,7 +49,6 @@
     overflow-y: auto;
     overflow-x: hidden;
     height: 100%;
-    padding-bottom: 40px;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -75,5 +74,5 @@
 }
 
 .inputContainer {
-    margin-top: 20px;
+    margin-top: 10px;
 }
