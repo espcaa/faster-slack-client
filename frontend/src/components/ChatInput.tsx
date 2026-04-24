@@ -75,7 +75,15 @@ export default function ChatInput(props: {
       thread_ts: props.threadTS,
     });
 
-    setChatStore("messages", (prev) => [optimisticMessage, ...prev]);
+    if (props.threadTS) {
+      const tts = props.threadTS;
+      setChatStore("threadReplies", tts, (prev) => [
+        ...(prev || []),
+        optimisticMessage,
+      ]);
+    } else {
+      setChatStore("messages", (prev) => [optimisticMessage, ...prev]);
+    }
 
     const previousText = val;
     setText("");
@@ -88,7 +96,14 @@ export default function ChatInput(props: {
       props.threadTS ?? "",
     ).catch((e) => {
       console.error("Failed to send message", e);
-      setChatStore("messages", (prev) => prev.filter((m) => m.ts !== tempTS));
+      if (props.threadTS) {
+        const tts = props.threadTS;
+        setChatStore("threadReplies", tts, (prev) =>
+          (prev || []).filter((m) => m.ts !== tempTS),
+        );
+      } else {
+        setChatStore("messages", (prev) => prev.filter((m) => m.ts !== tempTS));
+      }
       setText(previousText);
       if (inputRef) inputRef.value = previousText;
       alert("Message failed to send. Please try again.");

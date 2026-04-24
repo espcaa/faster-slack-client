@@ -73,3 +73,7 @@
     background: var(--color-border);
     margin-left: 8px;
 }
+
+.inputContainer {
+    margin-top: 20px;
+}

@@ -13,15 +13,22 @@ import EditedIndicator from "./misc/EditedIndicator";
 import FileContainer from "./FilesContainer";
 import MessageActions from "./MessageActions";
 
+export type ThreadContext = "list" | "thread";
+
 export default function MessageItem(props: {
   message: Message;
   profile?: UserProfile;
   showUser?: boolean;
   workspaceID: string;
   onThreadClick?: (message: Message) => void;
-  showThreadButton: boolean;
+  // "list"   = main channel view: inline replies button + actions thread button
+  // "thread" = inside the thread panel: no thread buttons
+  threadContext: ThreadContext;
   channelID: string;
 }) {
+  const inList = () => props.threadContext === "list";
+  const showInlineReplies = () =>
+    inList() && (props.message.reply_count ?? 0) > 0;
   return (
     <div class={`${styles.message} ${props.showUser ? styles.groupStart : ""}`}>
       <div class={styles.left}>
@@ -80,13 +87,7 @@ export default function MessageItem(props: {
         <Show when={!!props.message.files?.length}>
           <FileContainer files={props.message.files!} />
         </Show>
-        <Show
-          when={
-            props.message.reply_count &&
-            props.message.reply_count > 0 &&
-            props.showThreadButton
-          }
-        >
+        <Show when={showInlineReplies()}>
           <ThreadRepliesButton
             message={props.message}
             workspaceID={props.workspaceID}
@@ -97,10 +98,7 @@ export default function MessageItem(props: {
           <MessageActions
             message={props.message}
             channelID={props.channelID}
-            canOpenThread={
-              props.message.thread_ts == undefined ||
-              (props.message.reply_count || 0) > 0
-            }
+            canOpenThread={inList()}
           />
         </div>
       </div>

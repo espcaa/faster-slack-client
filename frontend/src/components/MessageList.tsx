@@ -1,24 +1,15 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  on,
-  onCleanup,
-  onMount,
-  Show,
-} from "solid-js";
+import { createEffect, createSignal, on, Show } from "solid-js";
 import styles from "./MessageList.module.css";
-import { Message, UserProfile } from "../../bindings/fastslack/shared";
-import {
-  GetMessages,
-  ResolveUsers,
-} from "../../bindings/fastslack/slackservice";
-import { Events } from "@wailsio/runtime";
-import MessageItem from "./MessageItem";
-import DateDivider, { isDifferentDay } from "./DateDivider";
+import { GetMessages } from "../../bindings/fastslack/slackservice";
 import { chatStore, setChatStore, scrollPositions } from "../ChatStore";
 import SlickScrollbar from "./misc/Scrollbar";
 import ChatInput from "./ChatInput";
+import MessageStream from "./MessageStream";
+import {
+  fetchProfiles,
+  mergeIncoming,
+  useSlackMessageEvents,
+} from "../utils/messageStream";
 
 export default function MessageList(props: {
   teamID: string;
@@ -26,46 +17,31 @@ export default function MessageList(props: {
 }) {
   let containerRef!: HTMLDivElement;
   let switchingChannel = false;
-  const [_, setLoading] = createSignal(false);
   const [fetchingOlder, setFetchingOlder] = createSignal(false);
-  const [profiles, setProfiles] = createSignal<Record<string, UserProfile>>({});
 
   const messages = () => chatStore.messages;
 
-  const fetchProfiles = async (msgs: Message[]) => {
-    const userIDs = [...new Set(msgs.map((m) => m.user).filter(Boolean))];
-    if (!userIDs.length) return;
-    const resolved = await ResolveUsers(props.teamID, userIDs);
-    const profileMap: Record<string, UserProfile> = {};
-    for (const p of resolved) profileMap[p.id] = p;
-    setProfiles((prev) => ({ ...prev, ...profileMap }));
-  };
-
   const loadMessages = async (id: string) => {
-    setLoading(true);
     setChatStore({ messages: [], nextCursor: null });
     const res = await GetMessages(props.teamID, id, "");
-    if (res) {
-      setChatStore({
-        messages: [...res.messages],
-        nextCursor: res.next_cursor || null,
-      });
-      fetchProfiles(res.messages);
+    if (!res) return;
+    setChatStore({
+      messages: [...res.messages],
+      nextCursor: res.next_cursor || null,
+    });
+    fetchProfiles(props.teamID, res.messages);
 
-      // Cache is stale (no websocket updates while closed), so always
-      // refresh from the API in the background after showing cached data.
-      if (res.next_cursor === "cache") {
-        const fresh = await GetMessages(props.teamID, id, "cache");
-        if (fresh) {
-          setChatStore({
-            messages: [...fresh.messages],
-            nextCursor: fresh.next_cursor || null,
-          });
-          fetchProfiles(fresh.messages);
-        }
+    // if it's cache, try fetching fresh data in the background and update if different
+    if (res.next_cursor === "cache") {
+      const fresh = await GetMessages(props.teamID, id, "cache");
+      if (fresh) {
+        setChatStore({
+          messages: [...fresh.messages],
+          nextCursor: fresh.next_cursor || null,
+        });
+        fetchProfiles(props.teamID, fresh.messages);
       }
     }
-    setLoading(false);
   };
 
   const loadOlderMessages = async () => {
@@ -75,14 +51,12 @@ export default function MessageList(props: {
     setFetchingOlder(true);
     try {
       const res = await GetMessages(props.teamID, props.channelID, cursor);
-
       if (res) {
         setChatStore({
           messages: [...messages(), ...res.messages],
           nextCursor: res.next_cursor || null,
         });
-
-        fetchProfiles(res.messages);
+        fetchProfiles(props.teamID, res.messages);
       }
     } finally {
       setFetchingOlder(false);
@@ -93,9 +67,7 @@ export default function MessageList(props: {
     on(
       () => props.channelID,
       (id, prevID) => {
-        if (prevID) {
-          scrollPositions.set(prevID, containerRef.scrollTop);
-        }
+        if (prevID) scrollPositions.set(prevID, containerRef.scrollTop);
         switchingChannel = true;
         loadMessages(id).then(() => {
           requestAnimationFrame(() => {
@@ -110,23 +82,29 @@ export default function MessageList(props: {
   const handleScroll = (e: Event) => {
     if (switchingChannel) return;
     const el = e.currentTarget as HTMLDivElement;
-
     scrollPositions.set(props.channelID, el.scrollTop);
-
     const atVisualTop = el.scrollHeight - el.clientHeight + el.scrollTop <= 5;
-    if (atVisualTop && !fetchingOlder()) {
-      loadOlderMessages();
-    }
+    if (atVisualTop && !fetchingOlder()) loadOlderMessages();
   };
 
-  onMount(() => {
-    const offMessage = Events.On("slack:message", (event: any) => {
-      const data =
-        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      if (data.channel !== props.channelID) return;
-
-      // we need to update the parent message's reply count and latest_reply when a new thread reply is posted
-      if (data.thread_ts && data.thread_ts !== data.ts) {
+  useSlackMessageEvents({
+    teamID: props.teamID,
+    accept: (data) =>
+      data.channel === props.channelID &&
+      (!data.thread_ts || data.thread_ts === data.ts),
+    onNew: (msg) =>
+      setChatStore("messages", (prev) => mergeIncoming(prev, msg, true)),
+    onChanged: (updated) =>
+      setChatStore("messages", (m) => m.ts === updated.ts, updated),
+    onDeleted: (ts) =>
+      setChatStore("messages", (prev) => prev.filter((m) => m.ts !== ts)),
+    onRejected: (data) => {
+      // update parent's reply count
+      if (
+        data.channel === props.channelID &&
+        data.thread_ts &&
+        data.thread_ts !== data.ts
+      ) {
         setChatStore(
           "messages",
           (m) => m.ts === data.thread_ts,
@@ -141,51 +119,8 @@ export default function MessageList(props: {
               : [data.user],
           }),
         );
-        return;
       }
-
-      console.log("New message event received", data);
-      const msg = data as Message;
-      setChatStore("messages", (prev) => {
-        if (prev.some((m) => m.ts === msg.ts)) return prev;
-        // Remove any optimistic (pending) message from the same user with the same text
-        const filtered = prev.filter(
-          (m) =>
-            !(
-              m.ts.includes(".pending") &&
-              m.user === msg.user &&
-              m.text === msg.text
-            ),
-        );
-        return [msg, ...filtered];
-      });
-      fetchProfiles([msg]);
-    });
-
-    const offChanged = Events.On("slack:message_changed", (event: any) => {
-      const data =
-        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      if (data.channel !== props.channelID) return;
-
-      const updated = data.message as Message;
-      setChatStore("messages", (m) => m.ts === updated.ts, updated);
-    });
-
-    const offDeleted = Events.On("slack:message_deleted", (event: any) => {
-      const data =
-        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      if (data.channel !== props.channelID) return;
-
-      setChatStore("messages", (prev) =>
-        prev.filter((m) => m.ts !== data.deleted_ts),
-      );
-    });
-
-    onCleanup(() => {
-      offMessage();
-      offChanged();
-      offDeleted();
-    });
+    },
   });
 
   return (
@@ -197,52 +132,26 @@ export default function MessageList(props: {
       </div>
       <div class={styles.listWrapper}>
         <div class={styles.list} ref={containerRef} onScroll={handleScroll}>
-          <For each={messages()}>
-            {(msg, i) => {
-              const nextOlder = () => messages()[i() + 1];
-              const showHeader = () => {
-                if (!nextOlder()) return true;
-
-                if (nextOlder().user !== msg.user) return true;
-
-                const diff = parseFloat(msg.ts) - parseFloat(nextOlder().ts);
-                return diff > 180;
-              };
-              const showDateDivider = () => {
-                if (!nextOlder()) return false;
-                return isDifferentDay(msg.ts, nextOlder().ts);
-              };
-              return (
-                <>
-                  <MessageItem
-                    channelID={props.channelID}
-                    message={msg}
-                    profile={profiles()[msg.user]}
-                    showUser={showHeader()}
-                    workspaceID={props.teamID}
-                    onThreadClick={(message) =>
-                      setChatStore({
-                        threadTS: message.thread_ts || message.ts,
-                        threadParent: message,
-                        openThreads: {
-                          ...chatStore.openThreads,
-                          [props.channelID]: {
-                            threadTs: message.thread_ts || message.ts,
-                            threadParent: message,
-                          },
-                        },
-                      })
-                    }
-                    showThreadButton={true}
-                  />
-                  <Show when={showDateDivider()}>
-                    <DateDivider ts={msg.ts} />
-                  </Show>
-                </>
-              );
-            }}
-          </For>
-
+          <MessageStream
+            messages={messages()}
+            direction="up"
+            channelID={props.channelID}
+            workspaceID={props.teamID}
+            threadContext="list"
+            onThreadClick={(message) =>
+              setChatStore({
+                threadTS: message.thread_ts || message.ts,
+                threadParent: message,
+                openThreads: {
+                  ...chatStore.openThreads,
+                  [props.channelID]: {
+                    threadTs: message.thread_ts || message.ts,
+                    threadParent: message,
+                  },
+                },
+              })
+            }
+          />
           <Show when={fetchingOlder()}>
             <div class={styles.loading}>Fetching older messages...</div>
           </Show>
