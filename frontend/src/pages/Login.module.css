@@ -5,7 +5,7 @@
 
 .sidebar {
     width: 40vw;
-    background: url("/plane.png") center / cover no-repeat;
+    background: url("../assets/plane.png") center / cover no-repeat;
 }
 
 .contentContainer {

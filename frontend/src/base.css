@@ -131,7 +131,7 @@ h3 {
 
 .login-sidebar {
     width: 40%;
-    background: url("/plane.png") center / cover no-repeat;
+    background: url("../assets/plane.png") center / cover no-repeat;
 }
 
 .login-content {
