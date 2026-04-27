@@ -193,3 +193,31 @@ func (c *Client) DeleteMessage(teamID, channelID, ts string) error {
 	_, err := c.Do(teamID, "chat.delete", params)
 	return err
 }
+
+func (c *Client) GetCategories(teamId string, cursor string) ([]shared.Category, string, error) {
+	params := url.Values{}
+	if cursor != "" {
+		params.Set("cursor", cursor)
+	}
+
+	raw, err := c.Do(teamId, "users.channelSections.list", params)
+	if err != nil {
+		return nil, "", err
+	}
+
+	var resp struct {
+		Ok         bool              `json:"ok"`
+		Categories []shared.Category `json:"channel_sections"`
+		Cursor     string            `json:"cursor"`
+	}
+
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil, "", err
+	}
+
+	if !resp.Ok {
+		return nil, "", fmt.Errorf("failed to fetch categories")
+	}
+
+	return resp.Categories, resp.Cursor, nil
+}

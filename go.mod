@@ -9,6 +9,7 @@ require (
 	github.com/coder/websocket v1.8.14
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
+	github.com/kyokomi/emoji/v2 v2.2.13
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 	github.com/zalando/go-keyring v0.2.8
 	modernc.org/sqlite v1.48.1

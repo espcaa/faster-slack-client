@@ -10,8 +10,21 @@ import (
 	"strings"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/kyokomi/emoji/v2"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
+
+// unicodeEmojiMap maps Slack-style shortcodes (without colons) to their
+// unicode glyphs for standard emojis.
+var unicodeEmojiMap = func() map[string]string {
+	m := emoji.CodeMap()
+	out := make(map[string]string, len(m))
+	for code, glyph := range m {
+		// CodeMap keys look like ":hear_no_evil:" — strip the colons.
+		out[strings.Trim(code, ":")] = glyph
+	}
+	return out
+}()
 
 type SlackService struct {
 	Client       *slack.Client
@@ -54,9 +67,13 @@ func (s *SlackService) ResolveEmojis(teamID string, names []string) ([]shared.Em
 		if name == "" {
 			continue
 		}
-		if emoji, ok := s.EmojiInfos.Get(name); ok {
-			updatedIDs[name] = emoji.Updated
-			result = append(result, emoji)
+		if glyph, ok := unicodeEmojiMap[name]; ok {
+			result = append(result, shared.Emoji{Name: name, Unicode: glyph})
+			continue
+		}
+		if e, ok := s.EmojiInfos.Get(name); ok {
+			updatedIDs[name] = e.Updated
+			result = append(result, e)
 		} else {
 			updatedIDs[name] = 0
 		}
@@ -366,4 +383,48 @@ func (s *SlackService) DeleteMessage(teamID, channelID, threadTs, ts string) err
 	}
 
 	return nil
+}
+
+func (s *SlackService) GetAllCategories(teamID string) ([]shared.Category, error) {
+	state := s.States[teamID]
+	if state == nil {
+		return nil, fmt.Errorf("no state for team %s", teamID)
+	}
+
+	if state.Categories != nil {
+		go s.refreshCategories(teamID)
+		return *state.Categories, nil
+	}
+
+	return s.refreshCategories(teamID)
+}
+
+func (s *SlackService) refreshCategories(teamID string) ([]shared.Category, error) {
+	all, _, err := s.Client.GetCategories(teamID, "")
+	if err != nil {
+		return nil, err
+	}
+
+	state := s.States[teamID]
+	if state == nil {
+		return nil, fmt.Errorf("no state for team %s", teamID)
+	}
+	state.Categories = &all
+
+	if err := store.SaveWorkspace(teamID, state); err != nil {
+		log.Printf("Failed to save workspace with categories for %s: %v\n", teamID, err)
+	}
+
+	app := application.Get()
+	if app != nil {
+		app.Event.Emit("slack:categories_updated", struct {
+			TeamID     string
+			Categories []shared.Category
+		}{
+			TeamID:     teamID,
+			Categories: all,
+		})
+	}
+
+	return all, nil
 }

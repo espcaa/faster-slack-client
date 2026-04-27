@@ -24,18 +24,38 @@ export default function EmojiComponent(props: {
 
   return (
     <Show
-      when={!emoji.loading && emoji()?.value}
+      when={!emoji.loading && emoji()}
       fallback={<span>:{props.name}:</span>}
     >
-      <img
-        src={emoji()!.value}
-        alt={`:${props.name}:`}
-        style={{
-          width: props.bigVersion ? "32px" : "20px",
-          height: props.bigVersion ? "32px" : "20px",
-          "vertical-align": "middle",
-        }}
-      />
+      <Show
+        when={emoji()!.unicode}
+        fallback={
+          <Show
+            when={emoji()!.value}
+            fallback={<span>:{props.name}:</span>}
+          >
+            <img
+              src={emoji()!.value}
+              alt={`:${props.name}:`}
+              style={{
+                width: props.bigVersion ? "32px" : "20px",
+                height: props.bigVersion ? "32px" : "20px",
+                "vertical-align": "middle",
+              }}
+            />
+          </Show>
+        }
+      >
+        <span
+          style={{
+            "font-size": props.bigVersion ? "32px" : "20px",
+            "line-height": "1",
+            "vertical-align": "middle",
+          }}
+        >
+          {emoji()!.unicode}
+        </span>
+      </Show>
     </Show>
   );
 }

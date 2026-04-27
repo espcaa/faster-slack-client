@@ -275,6 +275,7 @@ type UserProfile struct {
 type Emoji struct {
 	Name    string `json:"name"`
 	Url     string `json:"value"`
+	Unicode string `json:"unicode,omitempty"`
 	Updated int64  `json:"updated"`
 }
 
@@ -282,4 +283,19 @@ type SearchResult struct {
 	ChannelID string
 	Name      string
 	Type      string
+}
+
+type Category struct {
+	ID                   string `json:"channel_section_id"`
+	Name                 string `json:"name"`
+	Type                 string `json:"type"`
+	Emoji                string `json:"emoji,omitempty"`
+	NextChannelSectionID string `json:"next_channel_section_id,omitempty"`
+	LastUpdated          int64  `json:"last_updated,omitempty"`
+	IsRedacted           bool   `json:"is_redacted,omitempty"`
+	ChannelIDsPage       struct {
+		ChannelIDs []string `json:"channel_ids"`
+		Count      int      `json:"count"`
+		Cursor     string   `json:"cursor,omitempty"`
+	} `json:"channel_ids_page"`
 }

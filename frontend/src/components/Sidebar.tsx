@@ -1,5 +1,14 @@
-import { createResource, createSignal, For, Show } from "solid-js";
 import {
+  createResource,
+  createSignal,
+  For,
+  Show,
+  onMount,
+  Switch,
+  Match,
+} from "solid-js";
+import {
+  GetAllCategories,
   GetChannels,
   GetIMs,
   ResolveUsers,
@@ -7,13 +16,23 @@ import {
 import { Logout } from "../../bindings/fastslack/slackauthservice";
 import Scrollbar from "./misc/Scrollbar";
 import styles from "./Sidebar.module.css";
-import { GetAvatarUrl } from "../utils/pfp";
-import { MdRoundLock } from "solid-icons/md";
-import { useNavigation } from "../NavigationContext";
+import { Category, Channel } from "../../bindings/fastslack/shared";
+import { Events } from "@wailsio/runtime";
+import EmojiComponent from "./misc/Emoji";
+import ChannelItem from "./ChannelItem";
+import { MdRoundMessage, MdRoundStar, MdRoundTag } from "solid-icons/md";
 
 interface Props {
   teamID: string;
 }
+
+const CatBasicNames: Record<string, string> = {
+  channels: "Channels",
+  direct_messages: "Direct Messages",
+  stars: "Starred",
+  recent_apps: "Apps",
+  slack_connect: "Shared",
+};
 
 export default function Sidebar(props: Props) {
   const [channels] = createResource(
@@ -24,126 +43,165 @@ export default function Sidebar(props: Props) {
     () => props.teamID,
     (teamID) => GetIMs(teamID),
   );
+
   const [scrollEl, setScrollEl] = createSignal<HTMLDivElement | null>(null);
+  const [categories, setCategories] = createSignal<Category[]>([]);
+
+  const loadCategories = async () => {
+    try {
+      const cats = await GetAllCategories(props.teamID);
+      setCategories(cats || []);
+    } catch (e) {
+      console.error("Failed to load categories", e);
+    }
+  };
+
+  onMount(() => {
+    loadCategories();
+    Events.On("slack:categories_updated", (e) => {
+      if (e.data.teamID === props.teamID) {
+        setCategories(e.data.categories);
+      }
+    });
+  });
 
   const [profiles] = createResource(
     () => ims(),
     async (currentIms) => {
-      const userIDs = currentIms
-        .map((im) => im.user)
-        .filter((id): id is string => !!id);
+      const userIDs =
+        currentIms?.map((im) => im.user).filter((id): id is string => !!id) ||
+        [];
       if (userIDs.length === 0) return {};
 
       try {
         const userList = await ResolveUsers(props.teamID, userIDs);
-
         const profileMap: Record<string, any> = {};
         userList.forEach((u) => {
           profileMap[u.id] = u;
         });
-
         return profileMap;
       } catch (e) {
-        console.error("Batch resolution failed", e);
         return {};
       }
     },
   );
 
-  const sortedChannels = () =>
-    (channels() ?? [])
-      .filter((c) => !c.is_archived)
-      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  const grouped = () => {
+    const allChannels = channels() ?? [];
+    const allIMs = ims() ?? [];
+    const allItems = [...allChannels, ...allIMs];
+    const channelMap = new Map(allItems.map((ch) => [ch.id, ch]));
 
-  const sortedIMs = () =>
-    (ims() ?? [])
-      .filter((im) => !im.is_archived)
-      .sort((a, b) => {
-        const aTime = a.updated || a.created || 0;
-        const bTime = b.updated || b.created || 0;
-        return bTime - aTime;
-      });
+    const assignedIds = new Set(
+      categories().flatMap((cat) => cat.channel_ids_page?.channel_ids || []),
+    );
+
+    return categories()
+      .map((cat) => {
+        let sectionChannels: Channel[] = [];
+
+        if (cat.type === "direct_messages") {
+          const unassignedIMs = allIMs.filter((im) => !assignedIds.has(im.id));
+          const assignedToThis = (cat.channel_ids_page?.channel_ids || [])
+            .map((id) => channelMap.get(id))
+            .filter((ch): ch is Channel => !!ch);
+
+          sectionChannels = [...assignedToThis, ...unassignedIMs];
+        } else if (cat.type === "channels") {
+          const unassignedChannels = allChannels.filter(
+            (ch) => !assignedIds.has(ch.id),
+          );
+          const assignedToThis = (cat.channel_ids_page?.channel_ids || [])
+            .map((id) => channelMap.get(id))
+            .filter((ch): ch is Channel => !!ch);
+
+          sectionChannels = [...assignedToThis, ...unassignedChannels];
+        } else {
+          sectionChannels = (cat.channel_ids_page?.channel_ids || [])
+            .map((id) => channelMap.get(id))
+            .filter((ch): ch is Channel => !!ch);
+        }
+
+        return {
+          ...cat,
+          name: CatBasicNames[cat.type] || cat.name || "Section",
+          channels: sectionChannels,
+        };
+      })
+      .filter(
+        (group) =>
+          group.channels.length > 0 || group.type === "direct_messages",
+      );
+  };
 
   return (
     <div class={styles.sidebar}>
-      <div class={styles.scrollArea} ref={(el) => setScrollEl(el)}>
-        <div class={styles.sectionHeader}>Channels</div>
-        <Show
-          when={!channels.loading}
-          fallback={<div class={styles.loading}>Loading...</div>}
-        >
-          <For each={sortedChannels()}>
-            {(ch) => (
-              <div
-                class={styles.item}
-                classList={{
-                  [styles.active]: useNavigation().selectedChannel() === ch.id,
-                }}
-                onClick={() => useNavigation().selectChannel(ch.id)}
-              >
-                <Show when={ch.is_private}>
-                  <span class={styles.lock} title="Private channel">
-                    <MdRoundLock size={14} />
-                  </span>
-                </Show>
-                <Show when={ch.is_private === false}>
-                  <span class={styles.hash}>#</span>
-                </Show>
-                {ch.name}
-              </div>
-            )}
-          </For>
-        </Show>
+      <div class={styles.sidebarContent}>
+        <div class={styles.scrollArea} ref={setScrollEl}>
+          <Show
+            when={!channels.loading && !ims.loading}
+            fallback={<div class={styles.loading}>Loading...</div>}
+          >
+            <For each={grouped()}>
+              {(group) => (
+                <div class={styles.category}>
+                  <div class={styles.categoryHeader}>
+                    <Switch
+                      fallback={
+                        <EmojiComponent
+                          name={
+                            group.emoji ||
+                            (group.type === "stars" ? "star" : "")
+                          }
+                        />
+                      }
+                    >
+                      <Match when={group.type === "direct_messages"}>
+                        <div class={styles.iconCard}>
+                          <MdRoundMessage size={16} />
+                        </div>
+                      </Match>
+                      <Match when={group.type === "channels"}>
+                        <div class={styles.iconCard}>
+                          <MdRoundTag size={16} />
+                        </div>
+                      </Match>
+                      <Match when={group.type === "starred"}>
+                        <div class={styles.iconCard}>
+                          <MdRoundStar size={16} />
+                        </div>
+                      </Match>
+                    </Switch>
 
-        <div class={styles.sectionHeader}>Direct Messages</div>
-        <Show
-          when={!ims.loading}
-          fallback={<div class={styles.loading}>Loading...</div>}
-        >
-          <For each={sortedIMs()}>
-            {(im) => (
-              <div
-                class={styles.item}
-                onClick={() => useNavigation().selectChannel(im.id)}
-                classList={{
-                  [styles.active]: useNavigation().selectedChannel() === im.id,
-                }}
-              >
-                <Show when={profiles()} fallback={im.user}>
-                  {(data) => {
-                    const user = im.user ? data()[im.user] : undefined;
-                    return (
-                      <div class={styles.dmItem}>
-                        <Show when={user}>
-                          {(u) => (
-                            <img
-                              src={GetAvatarUrl(u(), props.teamID)}
-                              alt={`${u().profile?.display_name || u().profile?.real_name || im.user}'s profile picture`}
-                              class={styles.avatar}
-                            />
-                          )}
-                        </Show>
-                        <span>
-                          {user?.profile?.display_name ||
-                            user?.profile?.real_name ||
-                            im.user}
-                        </span>
-                      </div>
-                    );
-                  }}
-                </Show>
-              </div>
-            )}
-          </For>
-        </Show>
-      </div>
+                    <p class={styles.categoryName}>
+                      {group.name ||
+                        (group.type === "stars" ? "Starred" : "Section")}
+                    </p>
+                  </div>
+                  <For each={group.channels}>
+                    {(ch) => (
+                      <ChannelItem
+                        channel={ch}
+                        teamID={props.teamID}
+                        userProfile={
+                          ch.user ? profiles()?.[ch.user] : undefined
+                        }
+                      />
+                    )}
+                  </For>
+                </div>
+              )}
+            </For>
+          </Show>
+        </div>
 
-      <Scrollbar container={scrollEl()} />
+        <Scrollbar container={scrollEl()} />
 
-      <div class={styles.footer}>
-        <button class="btn btn--ghost" onClick={() => Logout()}>
-          Log out
-        </button>
+        <div class={styles.footer}>
+          <button class="btn btn--ghost" onClick={() => Logout()}>
+            Log out
+          </button>
+        </div>
       </div>
     </div>
   );

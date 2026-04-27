@@ -13,6 +13,7 @@ type WorkspaceState struct {
 	MinChannelUpdated int64                     `json:"min_channel_updated"`
 	Channels          map[string]shared.Channel `json:"channels"`
 	IMs               map[string]shared.Channel `json:"ims"`
+	Categories        *[]shared.Category        `json:"categories"`
 }
 
 func cacheDir() string {
