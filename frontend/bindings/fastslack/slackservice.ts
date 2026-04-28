@@ -17,6 +17,10 @@ export function DeleteMessage(teamID: string, channelID: string, threadTs: strin
     return $Call.ByID(3311734089, teamID, channelID, threadTs, ts);
 }
 
+export function DownloadFile(url: string, name: string): $CancellablePromise<string> {
+    return $Call.ByID(682707047, url, name);
+}
+
 export function GetAllCategories(teamID: string): $CancellablePromise<shared$0.Category[]> {
     return $Call.ByID(3050061730, teamID).then(($result: any) => {
         return $$createType1($result);

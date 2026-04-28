@@ -10,7 +10,7 @@ import BlockKitRenderer from "../blockkit/BlockKitRenderer";
 import { GetAvatarUrl } from "../utils/pfp";
 import UserProfileCardTrigger from "./misc/UserProfileCardTrigger";
 import EditedIndicator from "./misc/EditedIndicator";
-import FileContainer from "./FilesContainer";
+import ImageComponent from "./media/ImageComponent";
 import MessageActions from "./MessageActions";
 import { useAuth } from "../AuthContext";
 
@@ -90,7 +90,22 @@ export default function MessageItem(props: {
           </Show>
         </div>
         <Show when={!!props.message.files?.length}>
-          <FileContainer files={props.message.files!} />
+          {(() => {
+            const images = (props.message.files ?? []).filter((f) =>
+              f.mimetype.startsWith("image/"),
+            );
+            return (
+              <div style={{ "margin-top": "8px" }}>
+                {images.map((file, idx) => (
+                  <ImageComponent
+                    file={file}
+                    gallery={images}
+                    galleryIndex={idx}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </Show>
         <Show when={showInlineReplies()}>
           <ThreadRepliesButton

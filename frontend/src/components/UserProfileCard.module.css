@@ -83,5 +83,5 @@
 
 .messageBtn:hover {
     background: var(--color-primary);
-    color: var(--color-ink);
+    color: var(--color-canvas);
 }

@@ -6,6 +6,7 @@
     overflow: hidden;
     background: var(--color-surface, #f0f0f0);
     border: 1px solid var(--color-border);
+    display: inline-block;
 }
 
 .placeholder {
@@ -27,4 +28,46 @@
     border-radius: var(--radius-md);
     opacity: 0;
     transition: opacity 0.25s ease;
+}
+
+.imageActions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 0.15s ease-in-out,
+        visibility 0.15s;
+    background-color: var(--color-canvas);
+    padding: 6px;
+    border-radius: var(--radius-sm);
+}
+
+.imageWrapper:hover .imageActions {
+    opacity: 1;
+    visibility: visible;
+}
+
+.actionButton {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-ink);
+    padding: 4px 4px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.actionButton:hover {
+    background-color: var(--color-primary-raised);
+    cursor: pointer;
 }
