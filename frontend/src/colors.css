@@ -1,75 +1,75 @@
+:root,
+[data-theme="dark"] {
+    --c0-black: #16141f;
+    --c1-red: #eb6f92;
+    --c2-green: #95b1ac;
+    --c3-yellow: #f6c177;
+    --c4-blue: #31748f;
+    --c5-magenta: #c4a7e7;
+    --c6-cyan: #9ccfd8;
+    --c7-white: #e0def4;
+
+    --c8-bright-black: #524f67;
+    --c9-bright-red: #eb6f92;
+    --c10-bright-green: #95b1ac;
+    --c11-bright-yellow: #f6c177;
+    --c12-bright-blue: #31748f;
+    --c13-bright-magenta: #c4a7e7;
+    --c14-bright-cyan: #9ccfd8;
+    --c15-bright-white: #e0def4;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --c0-black: #f8f0e7;
+        --c1-red: #b4637a;
+        --c2-green: #6d8f89;
+        --c3-yellow: #ea9d34;
+        --c4-blue: #286983;
+        --c5-magenta: #907aa9;
+        --c6-cyan: #56949f;
+        --c7-white: #464261;
+
+        --c8-bright-black: #cecacd;
+        --c9-bright-red: #b4637a;
+        --c10-bright-green: #6d8f89;
+        --c11-bright-yellow: #ea9d34;
+        --c12-bright-blue: #286983;
+        --c13-bright-magenta: #907aa9;
+        --c14-bright-cyan: #56949f;
+        --c15-bright-white: #464261;
+    }
+}
+
 :root {
-    --c0-black: oklch(21% 0.01 70);
-    --c1-red: oklch(48% 0.18 25);
-    --c2-green: oklch(62% 0.14 108);
-    --c3-yellow: oklch(68% 0.16 75);
-    --c4-blue: oklch(53% 0.06 220);
-    --c5-magenta: oklch(53% 0.13 345);
-    --c6-cyan: oklch(60% 0.09 155);
-    --c7-white: oklch(67% 0.02 80);
-
-    --c8-bright-black: oklch(59% 0.02 70);
-    --c9-bright-red: oklch(62% 0.22 28);
-    --c10-bright-green: oklch(74% 0.16 108);
-    --c11-bright-yellow: oklch(82% 0.15 85);
-    --c12-bright-blue: oklch(66% 0.05 195);
-    --c13-bright-magenta: oklch(66% 0.1 350);
-    --c14-bright-cyan: oklch(73% 0.1 150);
-    --c15-bright-white: oklch(88% 0.04 85);
-
     --color-ink: var(--c15-bright-white);
-    --color-ink-muted: var(--c8-bright-black);
-    --color-canvas: oklch(15% 0.005 260);
-    --color-canvas-raised: oklch(20% 0.005 260);
-    --color-canvas-sunken: oklch(12% 0.005 260);
+    --color-ink-muted: var(--c7-var(--c7-white));
+    --color-canvas: var(--c0-black);
 
-    --color-border: oklch(25% 0.01 260 / 0.6);
-    --color-border-subtle: oklch(20% 0.01 260 / 0.6);
+    --color-border: var(--c8-bright-black);
+    --color-canvas-raised: color-mix(
+        in srgb,
+        var(--color-canvas) 85%,
+        var(--color-border)
+    );
 
     --color-link: var(--c12-bright-blue);
     --color-positive: var(--c10-bright-green);
     --color-negative: var(--c9-bright-red);
     --color-warning: var(--c11-bright-yellow);
-    --color-accent: var(--c3-yellow);
 
-    --color-primary: var(--c3-yellow);
-    --color-primary-ghost: color-mix(
-        in oklch,
-        var(--color-primary) 12%,
+    --color-accent: var(--c13-bright-magenta);
+
+    --color-primary: var(--c5-magenta);
+    --color-primary-muted: color-mix(
+        in srgb,
+        var(--color-primary) 15%,
         transparent
     );
-    --color-primary-hover: color-mix(in oklch, var(--color-primary), white 10%);
-    --color-primary-muted: color-mix(
-        in oklch,
-        var(--c3-yellow) 15%,
+
+    --color-primary-hover: color-mix(
+        in srgb,
+        var(--color-primary) 85%,
         var(--color-canvas)
     );
-    --color-primary-surface: var(--c3-yellow);
-}
-
-@media (prefers-color-scheme: light) {
-    :root {
-        --color-ink: var(--c0-black);
-        --color-ink-muted: var(--c7-white);
-        --color-canvas: oklch(93% 0.03 85);
-        --color-canvas-raised: oklch(96% 0.02 85);
-        --color-canvas-sunken: oklch(88% 0.04 85);
-
-        --color-border: oklch(80% 0.03 80);
-        --color-border-subtle: oklch(86% 0.03 85);
-
-        --color-link: var(--c4-blue);
-        --color-positive: var(--c2-green);
-        --color-negative: var(--c1-red);
-        --color-warning: var(--c3-yellow);
-        --color-accent: var(--c3-yellow);
-
-        --color-primary: var(--c1-red);
-        --color-primary-hover: var(--c9-bright-red);
-        --color-primary-muted: color-mix(
-            in oklch,
-            var(--c1-red) 10%,
-            var(--color-canvas)
-        );
-    }
 }

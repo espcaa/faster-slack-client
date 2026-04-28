@@ -1,5 +1,5 @@
 .card {
-    background: var(--color-canvas-raised);
+    background: var(--color-canvas);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     width: 280px;
@@ -43,6 +43,7 @@
 .title {
     font-size: var(--text-sm);
     color: var(--color-ink-muted);
+    overflow-wrap: anywhere;
 }
 
 .localTime {
