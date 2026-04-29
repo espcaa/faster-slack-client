@@ -2,8 +2,8 @@ import { createSignal, createEffect, Show } from "solid-js";
 import { useAuth } from "../../AuthContext";
 import styles from "./UserChip.module.css";
 import { resolveUser, getCachedUser } from "../../utils/userResolver";
-import UserProfileCardTrigger from "./UserProfileCardTrigger";
 import type { UserProfile } from "../../../bindings/fastslack/shared";
+import { UserProfileCardTrigger } from "../UserProfileCard";
 
 function UserChip(props: { userID: string }) {
   const { workspace } = useAuth();

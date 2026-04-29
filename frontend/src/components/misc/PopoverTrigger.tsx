@@ -1,18 +1,23 @@
-import { createSignal, JSX, onCleanup, Show } from "solid-js";
+import { createSignal, JSX, mergeProps, onCleanup, Show } from "solid-js";
 import { Portal } from "solid-js/web";
-import UserProfileCard from "../UserProfileCard";
-import { UserProfile } from "../../../bindings/fastslack/shared";
 
-export default function UserProfileCardTrigger(props: {
-  profile: UserProfile;
-  workspaceID: string;
+export default function Popover(props: {
+  content: JSX.Element;
   children: JSX.Element;
+  openDelay?: number;
+  closeDelay?: number;
+  offset?: number;
 }) {
+  const merged = mergeProps(
+    { openDelay: 400, closeDelay: 300, offset: 8 },
+    props,
+  );
+
   let containerRef: HTMLSpanElement | undefined;
   let openTimeout: number;
   let closeTimeout: number;
 
-  const [showCard, setShowCard] = createSignal(false);
+  const [show, setShow] = createSignal(false);
   const [pos, setPos] = createSignal({ top: 0, left: 0 });
 
   const cancelClose = () => window.clearTimeout(closeTimeout);
@@ -20,7 +25,7 @@ export default function UserProfileCardTrigger(props: {
   const scheduleClose = () => {
     window.clearTimeout(openTimeout);
     cancelClose();
-    closeTimeout = window.setTimeout(() => setShowCard(false), 300);
+    closeTimeout = window.setTimeout(() => setShow(false), merged.closeDelay);
   };
 
   const handleMouseEnter = () => {
@@ -29,11 +34,11 @@ export default function UserProfileCardTrigger(props: {
 
     const rect = containerRef.getBoundingClientRect();
     setPos({
-      top: rect.top - 8,
+      top: rect.top - merged.offset,
       left: rect.left + rect.width / 2,
     });
 
-    openTimeout = window.setTimeout(() => setShowCard(true), 400);
+    openTimeout = window.setTimeout(() => setShow(true), merged.openDelay);
   };
 
   onCleanup(() => {
@@ -48,9 +53,9 @@ export default function UserProfileCardTrigger(props: {
       onMouseLeave={scheduleClose}
       style={{ display: "inline-block", cursor: "pointer" }}
     >
-      {props.children}
+      {merged.children}
 
-      <Show when={showCard()}>
+      <Show when={show()}>
         <Portal>
           <div
             onMouseEnter={cancelClose}
@@ -61,12 +66,10 @@ export default function UserProfileCardTrigger(props: {
               top: `${pos().top}px`,
               left: `${pos().left}px`,
               transform: "translate(-50%, -100%)",
+              "pointer-events": "auto", // Ensure user can hover the card
             }}
           >
-            <UserProfileCard
-              profile={props.profile}
-              workspaceID={props.workspaceID}
-            />
+            {merged.content}
           </div>
         </Portal>
       </Show>

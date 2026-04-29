@@ -3,11 +3,10 @@
     align-items: center;
     margin-right: 20px;
     margin-left: 20px;
-    margin-bottom: 20px;
-    margin-top: 8px;
-    background: var(--color-canvas);
+    margin-top: 0px;
     flex-direction: column;
     gap: 8px;
+    margin-bottom: 8px;
 }
 
 .input {
@@ -26,9 +25,11 @@
 }
 
 .typingIndicator {
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     color: var(--color-ink-muted);
     align-self: flex-start;
+    margin-top: 0px;
+    margin-bottom: 4px;
 }
 
 .input:focus {

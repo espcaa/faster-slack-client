@@ -17,10 +17,7 @@ export default function Home() {
       <Sidebar teamID={workspace()!} />
 
       <div class={styles.main}>
-        <Show
-          when={useNavigation().selectedChannel()}
-          fallback={<span class={styles.placeholder}>Select a channel</span>}
-        >
+        <Show when={useNavigation().selectedChannel()}>
           <MessageList
             teamID={workspace()!}
             channelID={useNavigation().selectedChannel()!}

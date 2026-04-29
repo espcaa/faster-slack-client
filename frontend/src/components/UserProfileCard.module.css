@@ -49,6 +49,7 @@
 .localTime {
     font-size: var(--text-sm);
     color: var(--color-ink-muted);
+    margin-bottom: 6px;
 }
 
 .status {

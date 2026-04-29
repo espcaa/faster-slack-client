@@ -60,26 +60,36 @@ func (s *SlackService) ResolveUsers(teamID string, userIDs []string) ([]shared.U
 }
 
 func (s *SlackService) ResolveEmojis(teamID string, names []string) ([]shared.Emoji, error) {
-	updatedIDs := make(map[string]int64, len(names))
+	// use the cache to resolve as much as possible but use the api for missing ones
+	missing := make(map[string]int64)
 	var result []shared.Emoji
+	seen := make(map[string]struct{}, len(names))
 
 	for _, name := range names {
 		if name == "" {
 			continue
 		}
+		if _, dup := seen[name]; dup {
+			continue
+		}
+		seen[name] = struct{}{}
+
 		if glyph, ok := unicodeEmojiMap[name]; ok {
 			result = append(result, shared.Emoji{Name: name, Unicode: glyph})
 			continue
 		}
 		if e, ok := s.EmojiInfos.Get(name); ok {
-			updatedIDs[name] = e.Updated
 			result = append(result, e)
-		} else {
-			updatedIDs[name] = 0
+			continue
 		}
+		missing[name] = 0
 	}
 
-	fetched, err := s.Client.GetEmojisInfo(teamID, updatedIDs)
+	if len(missing) == 0 {
+		return result, nil
+	}
+
+	fetched, err := s.Client.GetEmojisInfo(teamID, missing)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +98,18 @@ func (s *SlackService) ResolveEmojis(teamID string, names []string) ([]shared.Em
 		result = append(result, e)
 	}
 	return result, nil
+}
+
+func (s *SlackService) InvalidateEmojis(names ...string) {
+	if s.EmojiInfos == nil {
+		return
+	}
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		s.EmojiInfos.Remove(name)
+	}
 }
 
 func (s *SlackService) Boot() error {

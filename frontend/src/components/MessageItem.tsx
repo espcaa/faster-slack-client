@@ -8,11 +8,11 @@ import ClankerChip from "./misc/ClankerChip";
 import ThreadRepliesButton from "./misc/ThreadRepliesButton";
 import BlockKitRenderer from "../blockkit/BlockKitRenderer";
 import { GetAvatarUrl } from "../utils/pfp";
-import UserProfileCardTrigger from "./misc/UserProfileCardTrigger";
 import EditedIndicator from "./misc/EditedIndicator";
 import ImageComponent from "./media/ImageComponent";
 import MessageActions from "./MessageActions";
 import { useAuth } from "../AuthContext";
+import { UserProfileCardTrigger } from "./UserProfileCard";
 
 export type ThreadContext = "list" | "thread";
 

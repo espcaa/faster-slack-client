@@ -6,6 +6,7 @@ import EmojiComponent from "./misc/Emoji";
 import { useNavigation } from "../NavigationContext";
 import { GetIMByUserID } from "../../bindings/fastslack/slackservice";
 import { MdRoundChat_bubble_outline } from "solid-icons/md";
+import Popover from "./misc/PopoverTrigger";
 
 function formatLocalTime(tzOffset: number): string {
   const localTime = new Date(
@@ -73,3 +74,20 @@ export default function UserProfileCard(props: {
     </div>
   );
 }
+
+export const UserProfileCardTrigger = (props: {
+  profile: UserProfile;
+  workspaceID: string;
+  children: any;
+}) => (
+  <Popover
+    content={
+      <UserProfileCard
+        profile={props.profile}
+        workspaceID={props.workspaceID}
+      />
+    }
+  >
+    {props.children}
+  </Popover>
+);

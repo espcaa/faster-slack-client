@@ -120,7 +120,11 @@ function RichTextElementView(props: {
             );
           }
           return (
-            <EmojiComponent name={e.name} bigVersion={props.isOnlyEmoji} />
+            <EmojiComponent
+              name={e.name}
+              bigVersion={props.isOnlyEmoji}
+              popover={true}
+            />
           );
         }}
       </Match>

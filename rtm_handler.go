@@ -76,6 +76,23 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 		}
 	case "user_typing":
 		app.Event.Emit("slack:user_typing", string(event.Raw))
+	case "emoji_changed":
+
+		// so we can invalidate the cache for the changed emojis
+
+		var payload struct {
+			Names []string `json:"names,omitempty"`
+		}
+		if err := json.Unmarshal(event.Raw, &payload); err != nil {
+			log.Printf("Failed to unmarshal emoji_changed event: %v", err)
+			return
+		}
+
+		for _, name := range payload.Names {
+			s.InvalidateEmojis(teamID, name)
+		}
+
+		app.Event.Emit("slack:emoji_changed", string(event.Raw))
 	case "pong":
 		log.Printf("We got a pong from team %s :scheming:", teamID)
 	default:

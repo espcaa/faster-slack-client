@@ -10,6 +10,7 @@ import {
   mergeIncoming,
   useSlackMessageEvents,
 } from "../utils/messageStream";
+import ChannelHeader from "./misc/ChannelHeader";
 
 export default function MessageList(props: {
   teamID: string;
@@ -126,9 +127,7 @@ export default function MessageList(props: {
   return (
     <div class={styles.container}>
       <div class={styles.header}>
-        <span class={styles.title}>
-          {props.channelID === "D" ? "Direct Message" : `#${props.channelID}`}
-        </span>
+        <ChannelHeader teamID={props.teamID} channelID={props.channelID} />
       </div>
       <div class={styles.listWrapper}>
         <div class={styles.list} ref={containerRef} onScroll={handleScroll}>

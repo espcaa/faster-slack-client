@@ -1,0 +1,34 @@
+.channelHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+.avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: clamp(3px, min(22.222%, 8px), 8px);
+    margin-right: 10px;
+}
+
+h2 {
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--color-ink);
+}
+
+.hash {
+    color: var(--color-ink-muted);
+    margin-right: 2px;
+}
+
+.topic {
+    font-size: var(--text-sm);
+    color: var(--color-ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+    position: relative;
+}
