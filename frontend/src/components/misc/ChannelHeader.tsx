@@ -31,12 +31,13 @@ export default function ChannelHeader(props: {
   );
 
   return (
-    <Show when={!channelInfo.loading} fallback={<h2>Loading channel...</h2>}>
+    <Show when={!channelInfo.loading}>
       <Show
         when={channelInfo()?.is_im}
         fallback={
           <div class={styles.channelHeader}>
-            <span class={styles.hash}>#</span> <h2>{channelInfo()?.name}</h2>
+            <span class={styles.hash}>#</span>{" "}
+            <h2 class={styles.name}>{channelInfo()?.name}</h2>
             <p class={styles.topic}>{channelInfo()?.topic.value}</p>{" "}
           </div>
         }
@@ -49,7 +50,9 @@ export default function ChannelHeader(props: {
               class={styles.avatar}
               style={{ "margin-right": "12px" }}
             />
-            <h2>{userProfile()?.profile.display_name || "Unknown User"}</h2>
+            <h2 class={styles.name}>
+              {userProfile()?.profile.display_name || "Unknown User"}
+            </h2>
           </Show>
         </div>
       </Show>

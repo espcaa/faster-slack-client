@@ -1,0 +1,16 @@
+.description {
+    font-size: var(--text-sm);
+    color: var(--color-ink-muted);
+    font-style: italic;
+}
+
+.section {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.header {
+    margin-bottom: 12px;
+}

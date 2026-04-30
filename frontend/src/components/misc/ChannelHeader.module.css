@@ -12,15 +12,17 @@
     margin-right: 10px;
 }
 
-h2 {
-    font-size: var(--text-base);
+.name {
+    font-size: var(--text-lg);
     font-weight: 700;
     color: var(--color-ink);
+    margin-left: -8px;
 }
 
 .hash {
     color: var(--color-ink-muted);
-    margin-right: 2px;
+    font-size: var(--text-lg);
+    font-weight: 700;
 }
 
 .topic {

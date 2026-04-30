@@ -7,9 +7,12 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-h3 {
+.emojiName {
     text-align: center;
     font-size: var(--text-sm);
     font-weight: 600;

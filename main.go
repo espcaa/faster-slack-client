@@ -70,6 +70,8 @@ func main() {
 		Services: []application.Service{
 			application.NewService(authService),
 			application.NewService(slackService),
+			application.NewService(&SettingsService{}),
+			application.NewService(&ThemeService{}),
 		},
 		Assets: application.AssetOptions{
 			Handler:    application.AssetFileServerFS(assets),

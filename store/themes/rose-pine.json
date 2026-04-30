@@ -1,0 +1,40 @@
+{
+  "id": "rose-pine",
+  "name": "Rosé Pine",
+  "dark": {
+    "black":         "#16141f",
+    "red":           "#eb6f92",
+    "green":         "#95b1ac",
+    "yellow":        "#f6c177",
+    "blue":          "#31748f",
+    "magenta":       "#c4a7e7",
+    "cyan":          "#9ccfd8",
+    "white":         "#e0def4",
+    "brightBlack":   "#524f67",
+    "brightRed":     "#eb6f92",
+    "brightGreen":   "#95b1ac",
+    "brightYellow":  "#f6c177",
+    "brightBlue":    "#31748f",
+    "brightMagenta": "#c4a7e7",
+    "brightCyan":    "#9ccfd8",
+    "brightWhite":   "#e0def4"
+  },
+  "light": {
+    "black":         "#f8f0e7",
+    "red":           "#b4637a",
+    "green":         "#6d8f89",
+    "yellow":        "#ea9d34",
+    "blue":          "#286983",
+    "magenta":       "#907aa9",
+    "cyan":          "#56949f",
+    "white":         "#464261",
+    "brightBlack":   "#cecacd",
+    "brightRed":     "#b4637a",
+    "brightGreen":   "#6d8f89",
+    "brightYellow":  "#ea9d34",
+    "brightBlue":    "#286983",
+    "brightMagenta": "#907aa9",
+    "brightCyan":    "#56949f",
+    "brightWhite":   "#464261"
+  }
+}

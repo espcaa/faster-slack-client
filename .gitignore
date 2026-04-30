@@ -4,5 +4,4 @@ bin
 frontend/dist
 frontend/node_modules
 ./fastslack
-fastslack
 .DS_Store

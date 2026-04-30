@@ -1,0 +1,126 @@
+.preview {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--c8-bright-black);
+    background: var(--c0-black);
+    overflow: hidden;
+    font-size: 10px;
+    user-select: none;
+    width: 100%;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--c8-bright-black);
+}
+
+.hash {
+    color: var(--c7-white);
+    font-weight: 700;
+}
+
+.channelName {
+    height: 6px;
+    width: 60px;
+    border-radius: 3px;
+    background: var(--c15-bright-white);
+    opacity: 0.85;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+.message {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.avatar {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+
+.lines {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.metaRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.username {
+    height: 6px;
+    width: 48px;
+    border-radius: 3px;
+    background: var(--c15-bright-white);
+}
+
+.timestamp {
+    height: 4px;
+    width: 22px;
+    border-radius: 2px;
+    background: var(--c7-white);
+    opacity: 0.5;
+}
+
+.textRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.blob {
+    height: 5px;
+    border-radius: 2px;
+    background: var(--c7-white);
+    opacity: 0.7;
+}
+
+.link {
+    background: var(--c12-bright-blue);
+    opacity: 1;
+}
+
+.accent {
+    background: var(--c13-bright-magenta);
+    opacity: 1;
+}
+
+.mention {
+    background: var(--c11-bright-yellow);
+    opacity: 1;
+}
+
+.emoji {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c11-bright-yellow);
+}
+
+.input {
+    margin: 6px 8px 8px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid var(--c8-bright-black);
+    background: var(--c0-black);
+}

@@ -7,6 +7,7 @@ import ThreadView from "../components/ThreadView";
 import Sidebar from "../components/Sidebar";
 import SearchBar from "../components/Searchbar";
 import { useNavigation } from "../NavigationContext";
+import SettingsOverlay from "../components/SettingsOverlay";
 
 export default function Home() {
   const { workspace } = useAuth();
@@ -33,6 +34,7 @@ export default function Home() {
           />
         )}
       </Show>
+      <SettingsOverlay />
     </div>
   );
 }

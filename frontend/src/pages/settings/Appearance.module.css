@@ -1,0 +1,46 @@
+.iconButton {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-canvas-raised);
+    color: var(--color-ink);
+    cursor: pointer;
+}
+
+.iconButton:hover {
+    background-color: var(--color-canvas);
+}
+
+.gridThemesContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.themeOption {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    width: 100%;
+    gap: 8px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    max-width: 300px;
+}
+
+.themeName {
+    font-size: var(--text-sm);
+    font-weight: 900;
+    color: var(--color-ink);
+    text-align: start;
+    padding: 4px;
+}
+
+.selected {
+    border-color: var(--color-positive);
+    border: 2px solid var(--color-positive);
+}

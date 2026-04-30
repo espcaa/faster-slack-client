@@ -1,0 +1,40 @@
+{
+  "id": "everforest",
+  "name": "Everforest",
+  "dark": {
+    "black": "#1E2326",
+    "red": "#4C3743",
+    "green": "#3C4841",
+    "yellow": "#45443c",
+    "blue": "#384B55",
+    "magenta": "#83C092",
+    "cyan": "#3A515D",
+    "white": "#D3C6AA",
+    "brightBlack": "#4F585E",
+    "brightRed": "#E67E80",
+    "brightGreen": "#A7C080",
+    "brightYellow": "#DBBC7F",
+    "brightBlue": "#83C092",
+    "brightMagenta": "#D699B6",
+    "brightCyan": "#83C092",
+    "brightWhite": "#D3C6AA"
+  },
+  "light": {
+    "black": "#F2EFDF",
+    "red": "#F85552",
+    "green": "#8DA101",
+    "yellow": "#DFA000",
+    "blue": "#3A94C5",
+    "magenta": "#35A77C",
+    "cyan": "#56949f",
+    "white": "#5C6A72",
+    "brightBlack": "#BEC5B2",
+    "brightRed": "#F85552",
+    "brightGreen": "#8DA101",
+    "brightYellow": "#DFA000",
+    "brightBlue": "#3A94C5",
+    "brightMagenta": "#35A77C",
+    "brightCyan": "#56949f",
+    "brightWhite": "#708089"
+  }
+}
