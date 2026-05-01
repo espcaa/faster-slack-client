@@ -2,6 +2,7 @@
 @import "./base.css";
 @import "./blocks.css";
 @import "./utilities.css";
+@import "./blockkit/blockkit.css";
 
 @font-face {
     font-family: "Fredoka";

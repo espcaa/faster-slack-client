@@ -1,6 +1,7 @@
 import { For, Match, Switch, type JSX } from "solid-js";
 import UserChip from "../../components/misc/UserChip";
 import EmojiComponent from "../../components/misc/Emoji";
+import CodeBlock from "../elements/CodeBlock";
 
 type RichTextStyle = {
   bold?: boolean;
@@ -232,19 +233,17 @@ export default function RichTextBlock(props: {
               </span>
             </Match>
             <Match when={sub.type === "rich_text_preformatted"}>
-              <pre>
-                <SectionElements
-                  elements={
-                    (
-                      sub as Extract<
-                        RichTextSubElement,
-                        { type: "rich_text_preformatted" }
-                      >
-                    ).elements
-                  }
-                  isOnlyEmoji={onlyEmoji}
-                />
-              </pre>
+              {(() => {
+                const pre = sub as Extract<
+                  RichTextSubElement,
+                  { type: "rich_text_preformatted" }
+                >;
+                return (
+                  <CodeBlock language={pre.language}>
+                    <SectionElements elements={pre.elements} />
+                  </CodeBlock>
+                );
+              })()}
             </Match>
             <Match when={sub.type === "rich_text_quote"}>
               <blockquote>

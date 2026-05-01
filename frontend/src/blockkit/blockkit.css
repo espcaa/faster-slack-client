@@ -1,0 +1,228 @@
+.bk-blocks {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+}
+
+.bk-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 4px 0;
+}
+
+.bk-section__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.bk-section__text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.bk-section__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 16px;
+    margin-top: 4px;
+}
+
+.bk-section__field {
+    min-width: 0;
+    word-wrap: break-word;
+}
+
+.bk-section__accessory {
+    flex: 0 0 auto;
+    max-width: 25%;
+}
+
+.bk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 6px 0;
+}
+
+.bk-context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.bk-context img {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    object-fit: cover;
+}
+
+.bk-header {
+    margin: 8px 0 4px;
+    font-size: 1.15em;
+    font-weight: 700;
+}
+
+.bk-divider {
+    border: 0;
+    border-top: 1px solid currentColor;
+    opacity: 0.15;
+    margin: 8px 0;
+}
+
+.bk-image-block {
+    margin: 6px 0;
+}
+
+.bk-image-block img {
+    max-width: 100%;
+    max-height: 360px;
+    border-radius: 4px;
+    display: block;
+}
+
+.bk-image-block__title {
+    font-size: 0.85em;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.bk-image {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.bk-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.bk-button > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 0;
+}
+
+.bk-button img {
+    display: block;
+}
+
+.bk-button:hover {
+    opacity: 0.8;
+}
+
+.bk-button--primary {
+    border-color: var(--color-positive);
+    color: var(--color-positive);
+}
+
+.bk-button--danger {
+    border-color: var(--color-negative);
+    color: var(--color-negative);
+}
+
+.bk-overflow {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    padding: 8px 36px 8px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    cursor: pointer;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+}
+
+.bk-mention {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: var(--color-canvas-raised);
+    color: var(--color-ink);
+}
+
+.bk-codeblock {
+    position: relative;
+    margin: 6px 0;
+    padding: 10px 12px;
+    background: var(--color-canvas-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 4px);
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+    font-size: 0.85em;
+    line-height: 1.45;
+    white-space: pre;
+    color: var(--color-ink);
+}
+
+.bk-codeblock__code {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    white-space: pre;
+}
+
+.bk-codeblock__lang {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 0.75em;
+    text-transform: lowercase;
+    opacity: 0.55;
+    user-select: none;
+    pointer-events: none;
+}
+
+code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+    font-size: 0.9em;
+    background: var(--color-canvas-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    padding: 0 4px;
+}
+
+.bk-codeblock code {
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.bk-unsupported {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 3px;
+    background: var(--color-negative);
+    color: var(--color-canvas);
+    font-size: 0.8em;
+    opacity: 0.7;
+}
