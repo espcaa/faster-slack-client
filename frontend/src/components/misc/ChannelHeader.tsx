@@ -48,8 +48,8 @@ export default function ChannelHeader(props: {
               src={GetAvatarUrl(userProfile()!, props.teamID, 192)}
               alt=""
               class={styles.avatar}
-              style={{ "margin-right": "12px" }}
             />
+            <span class={styles.hash}>@</span>{" "}
             <h2 class={styles.name}>
               {userProfile()?.profile.display_name || "Unknown User"}
             </h2>

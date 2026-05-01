@@ -61,10 +61,10 @@
     padding: 16px;
     position: relative;
     overflow: auto;
+    overscroll-behavior: contain;
 
     scrollbar-width: none;
     -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
 }
 
 .content::-webkit-scrollbar {

@@ -3,7 +3,10 @@ import { Theme } from "../../../bindings/fastslack/store";
 import { applyTheme } from "../../utils/applyTheme";
 import styles from "./ThemeDemo.module.css";
 
-export default function ThemeDemo(props: { theme: Theme; dark?: boolean }) {
+export default function ThemeDemo(props: {
+  theme: Theme;
+  dark?: boolean;
+}) {
   let el!: HTMLDivElement;
   createEffect(() => applyTheme(props.theme, !!props.dark, el));
 
@@ -20,19 +23,13 @@ export default function ThemeDemo(props: { theme: Theme; dark?: boolean }) {
     {
       usernameWidth: 52,
       lines: [
-        [
-          { width: 70 },
-          { width: 30, kind: "link" as const },
-          { width: 40 },
-        ],
+        [{ width: 70 }, { width: 30, kind: "link" as const }, { width: 40 }],
         [{ width: 110 }, { emoji: true as const }],
       ],
     },
     {
       usernameWidth: 64,
-      lines: [
-        [{ width: 40, kind: "mention" as const }, { width: 90 }],
-      ],
+      lines: [[{ width: 40, kind: "mention" as const }, { width: 90 }]],
     },
     {
       usernameWidth: 44,

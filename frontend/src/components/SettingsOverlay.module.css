@@ -16,6 +16,10 @@
     max-height: 80vh;
     height: min(80vh, 600px);
     overflow: auto;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 .header {

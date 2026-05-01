@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     border-radius: var(--radius-md);
-    border: 1px solid var(--c8-bright-black);
     background: var(--c0-black);
     overflow: hidden;
     font-size: 10px;
@@ -124,3 +123,5 @@
     border: 1px solid var(--c8-bright-black);
     background: var(--c0-black);
 }
+
+

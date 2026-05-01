@@ -48,7 +48,9 @@ export default function AppearanceSettings() {
             {(t) => (
               <div
                 class={style.themeOption}
-                classList={{ [style.selected]: settings()!.themeId === t.id }}
+                classList={{
+                  [style.selected]: settings()!.themeId === t.id,
+                }}
                 onClick={() => update({ themeId: t.id })}
               >
                 <ThemeDemo
