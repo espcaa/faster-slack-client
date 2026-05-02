@@ -23,10 +23,12 @@ export default function MessageStream(props: {
             ? props.messages[i() + 1]
             : props.messages[i() - 1];
 
+        const authorKey = (m: typeof msg) => m.user || m.bot_id || "";
+
         const showHeader = () => {
           const n = olderNeighbor();
           if (!n) return true;
-          if (n.user !== msg.user) return true;
+          if (authorKey(n) !== authorKey(msg)) return true;
           const diff = Math.abs(parseFloat(msg.ts) - parseFloat(n.ts));
           return diff > 180;
         };

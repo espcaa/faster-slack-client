@@ -3,14 +3,13 @@ import UserChip from "../../components/misc/UserChip";
 import EmojiComponent from "../../components/misc/Emoji";
 import CodeBlock from "../elements/CodeBlock";
 
-type RichTextStyle = {
-  bold?: boolean;
-  italic?: boolean;
-  strike?: boolean;
-  code?: boolean;
-  underline?: boolean;
-  highlight?: boolean;
-};
+import type {
+  RichTextElement,
+  RichTextStyle,
+  RichTextSubElement,
+} from "../types";
+import Mention from "../../components/misc/Mention";
+import { parseAngleToken } from "../mrkdwn";
 
 function isOnlyEmoji(elements: RichTextSubElement[]): boolean {
   if (elements.length !== 1 || elements[0].type !== "rich_text_section")
@@ -24,51 +23,26 @@ function isOnlyEmoji(elements: RichTextSubElement[]): boolean {
   );
 }
 
-type RichTextElement =
-  | { type: "text"; text: string; style?: RichTextStyle }
-  | {
-      type: "link";
-      url: string;
-      text?: string;
-      style?: RichTextStyle;
-      unsafe?: boolean;
+function expandSlackTokens(
+  text: string,
+  style?: RichTextStyle,
+): RichTextElement[] {
+  const out: RichTextElement[] = [];
+  const re = /<([^>]+)>/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) {
+      out.push({ type: "text", text: text.slice(last, m.index), style });
     }
-  | { type: "emoji"; name: string; unicode?: string }
-  | { type: "user"; user_id: string; style?: RichTextStyle }
-  | { type: "channel"; channel_id: string; style?: RichTextStyle }
-  | { type: "usergroup"; usergroup_id: string; style?: RichTextStyle }
-  | {
-      type: "broadcast";
-      range: "here" | "channel" | "everyone";
-      style?: RichTextStyle;
-    }
-  | { type: "color"; value: string; style?: RichTextStyle }
-  | {
-      type: "date";
-      timestamp: number;
-      format: string;
-      url?: string;
-      fallback?: string;
-      style?: RichTextStyle;
-    };
-
-type RichTextSubElement =
-  | { type: "rich_text_section"; elements: RichTextElement[] }
-  | {
-      type: "rich_text_list";
-      style: "bullet" | "ordered";
-      elements: { type: "rich_text_section"; elements: RichTextElement[] }[];
-      indent?: number;
-      offset?: number;
-      border?: number;
-    }
-  | {
-      type: "rich_text_preformatted";
-      elements: RichTextElement[];
-      border?: number;
-      language?: string;
-    }
-  | { type: "rich_text_quote"; elements: RichTextElement[]; border?: number };
+    out.push(parseAngleToken(m[1]));
+    last = re.lastIndex;
+  }
+  if (last < text.length) {
+    out.push({ type: "text", text: text.slice(last), style });
+  }
+  return out;
+}
 
 function applyStyle(node: JSX.Element, style?: RichTextStyle): JSX.Element {
   if (!style) return node;
@@ -89,12 +63,20 @@ function RichTextElementView(props: {
   return (
     <Switch fallback={null}>
       <Match when={props.el.type === "text" && props.el}>
-        {(el) =>
-          applyStyle(
-            <>{(el() as Extract<RichTextElement, { type: "text" }>).text}</>,
-            (el() as Extract<RichTextElement, { type: "text" }>).style,
-          )
-        }
+        {(el) => {
+          const e = el() as Extract<RichTextElement, { type: "text" }>;
+          if (!e.text.includes("<")) {
+            return applyStyle(<>{e.text}</>, e.style);
+          }
+          const expanded = expandSlackTokens(e.text, e.style);
+          return (
+            <For each={expanded}>
+              {(sub) => (
+                <RichTextElementView el={sub} isOnlyEmoji={props.isOnlyEmoji} />
+              )}
+            </For>
+          );
+        }}
       </Match>
       <Match when={props.el.type === "link" && props.el}>
         {(el) => {
@@ -156,26 +138,28 @@ function RichTextElementView(props: {
       <Match when={props.el.type === "broadcast" && props.el}>
         {(el) => {
           const e = el() as Extract<RichTextElement, { type: "broadcast" }>;
-          return applyStyle(<span class="mention">@{e.range}</span>, e.style);
+          return applyStyle(
+            <Mention text={e.range === "here" ? "@here" : "@channel"} />,
+            e.style,
+          );
         }}
       </Match>
       <Match when={props.el.type === "color" && props.el}>
         {(el) => {
           const e = el() as Extract<RichTextElement, { type: "color" }>;
           return (
-            <span class="color-chip">
+            <span class="bk-color-chip">
+              {e.value}
               <span
                 style={{
                   background: e.value,
-                  width: "12px",
-                  height: "12px",
+                  width: "16px",
+                  height: "16px",
                   display: "inline-block",
                   "border-radius": "2px",
-                  "vertical-align": "middle",
-                  "margin-right": "4px",
+                  "margin-left": "4px",
                 }}
               />
-              {e.value}
             </span>
           );
         }}
@@ -196,7 +180,7 @@ function RichTextElementView(props: {
   );
 }
 
-function SectionElements(props: {
+export function SectionElements(props: {
   elements: RichTextElement[];
   isOnlyEmoji?: boolean;
 }) {

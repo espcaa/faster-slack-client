@@ -73,15 +73,27 @@ export function QuickUserChannelSearch(teamID: string, query: string): $Cancella
     });
 }
 
+export function ResolveBotInfo(teamID: string, botID: string): $CancellablePromise<shared$0.BotInfo | null> {
+    return $Call.ByID(962068100, teamID, botID).then(($result: any) => {
+        return $$createType10($result);
+    });
+}
+
+export function ResolveBots(teamID: string, appIDs: string[]): $CancellablePromise<shared$0.AppProfile[]> {
+    return $Call.ByID(3221068625, teamID, appIDs).then(($result: any) => {
+        return $$createType12($result);
+    });
+}
+
 export function ResolveEmojis(teamID: string, names: string[]): $CancellablePromise<shared$0.Emoji[]> {
     return $Call.ByID(1381900964, teamID, names).then(($result: any) => {
-        return $$createType10($result);
+        return $$createType14($result);
     });
 }
 
 export function ResolveUsers(teamID: string, userIDs: string[]): $CancellablePromise<shared$0.UserProfile[]> {
     return $Call.ByID(2167812529, teamID, userIDs).then(($result: any) => {
-        return $$createType12($result);
+        return $$createType16($result);
     });
 }
 
@@ -103,7 +115,11 @@ const $$createType5 = shared$0.MessagesResponse.createFrom;
 const $$createType6 = $Create.Nullable($$createType5);
 const $$createType7 = shared$0.SearchResult.createFrom;
 const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = shared$0.Emoji.createFrom;
-const $$createType10 = $Create.Array($$createType9);
-const $$createType11 = shared$0.UserProfile.createFrom;
+const $$createType9 = shared$0.BotInfo.createFrom;
+const $$createType10 = $Create.Nullable($$createType9);
+const $$createType11 = shared$0.AppProfile.createFrom;
 const $$createType12 = $Create.Array($$createType11);
+const $$createType13 = shared$0.Emoji.createFrom;
+const $$createType14 = $Create.Array($$createType13);
+const $$createType15 = shared$0.UserProfile.createFrom;
+const $$createType16 = $Create.Array($$createType15);

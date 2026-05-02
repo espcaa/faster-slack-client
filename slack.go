@@ -32,6 +32,61 @@ type SlackService struct {
 	RTMConns     map[string]*slack.RTMConnection
 	UserProfiles *lru.Cache[string, shared.UserProfile]
 	EmojiInfos   *lru.Cache[string, shared.Emoji]
+	BotProfiles  *lru.Cache[string, shared.AppProfile]
+	BotInfos     *lru.Cache[string, shared.BotInfo]
+}
+
+func (s *SlackService) ResolveBots(teamID string, appIDs []string) ([]shared.AppProfile, error) {
+	var missing []string
+	var result []shared.AppProfile
+	seen := make(map[string]struct{}, len(appIDs))
+
+	for _, id := range appIDs {
+		if id == "" {
+			continue
+		}
+		if _, dup := seen[id]; dup {
+			continue
+		}
+		seen[id] = struct{}{}
+
+		if profile, ok := s.BotProfiles.Get(id); ok {
+			result = append(result, profile)
+		} else {
+			missing = append(missing, id)
+		}
+	}
+
+	for _, id := range missing {
+		profile, err := s.Client.GetAppProfile(teamID, id)
+		if err != nil {
+			log.Printf("Failed to resolve app profile %s: %v", id, err)
+			continue
+		}
+		s.BotProfiles.Add(profile.ID, *profile)
+		result = append(result, *profile)
+	}
+
+	return result, nil
+}
+
+func (s *SlackService) ResolveBotInfo(teamID, botID string) (*shared.BotInfo, error) {
+	if botID == "" {
+		return nil, fmt.Errorf("bot id required")
+	}
+	if s.BotInfos != nil {
+		if info, ok := s.BotInfos.Get(botID); ok {
+			return &info, nil
+		}
+	}
+	info, err := s.Client.GetBotInfo(teamID, botID)
+	if err != nil {
+		return nil, err
+	}
+	if s.BotInfos != nil && info != nil {
+		s.BotInfos.Add(info.ID, *info)
+	}
+	return info, nil
 }
 
 func (s *SlackService) ResolveUsers(teamID string, userIDs []string) ([]shared.UserProfile, error) {
@@ -169,6 +224,16 @@ func (s *SlackService) Boot() error {
 		if s.EmojiInfos == nil {
 			emojiCache, _ := lru.New[string, shared.Emoji](5000)
 			s.EmojiInfos = emojiCache
+		}
+
+		if s.BotProfiles == nil {
+			botCache, _ := lru.New[string, shared.AppProfile](2000)
+			s.BotProfiles = botCache
+		}
+
+		if s.BotInfos == nil {
+			botInfoCache, _ := lru.New[string, shared.BotInfo](2000)
+			s.BotInfos = botInfoCache
 		}
 
 		if s.RTMConns == nil {

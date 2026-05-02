@@ -101,6 +101,54 @@ func (c *Client) GetUserProfiles(teamID string, userIDs []string) ([]shared.User
 	return result.Results, nil
 }
 
+func (c *Client) GetAppProfile(teamID, appID string) (*shared.AppProfile, error) {
+	if appID == "" {
+		return nil, fmt.Errorf("app id required")
+	}
+	params := url.Values{}
+	params.Set("app", appID)
+
+	raw, err := c.Do(teamID, "apps.profile.get", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp struct {
+		Ok         bool              `json:"ok"`
+		AppProfile shared.AppProfile `json:"app_profile"`
+	}
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.AppProfile, nil
+}
+
+func (c *Client) GetBotInfo(teamID, botID string) (*shared.BotInfo, error) {
+	if botID == "" {
+		return nil, fmt.Errorf("bot id required")
+	}
+	params := url.Values{}
+	params.Set("bot", botID)
+
+	raw, err := c.Do(teamID, "bots.info", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp struct {
+		Ok    bool           `json:"ok"`
+		Error string         `json:"error,omitempty"`
+		Bot   shared.BotInfo `json:"bot"`
+	}
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil, err
+	}
+	if !resp.Ok {
+		return nil, fmt.Errorf("bots.info failed: %s", resp.Error)
+	}
+	return &resp.Bot, nil
+}
+
 func (c *Client) GetEmojisInfo(teamID string, updatedIDs map[string]int64) ([]shared.Emoji, error) {
 	if len(updatedIDs) == 0 {
 		return nil, nil

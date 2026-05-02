@@ -3,5 +3,5 @@ bin
 .env
 frontend/dist
 frontend/node_modules
-./fastslack
+fastslack
 .DS_Store

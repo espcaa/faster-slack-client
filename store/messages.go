@@ -169,6 +169,7 @@ func GetCachedMessages(teamID, channelID string, threadTS string, limit int) ([]
 		}
 		if rawJSON != "" {
 			m.Raw = json.RawMessage(rawJSON)
+			_ = json.Unmarshal([]byte(rawJSON), &m)
 		}
 		msgs = append(msgs, m)
 	}

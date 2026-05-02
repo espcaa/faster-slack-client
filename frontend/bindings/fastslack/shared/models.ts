@@ -9,6 +9,361 @@ import { Create as $Create } from "@wailsio/runtime";
 // @ts-ignore: Unused imports
 import * as json$0 from "../../encoding/json/models.js";
 
+export class AppAuth {
+    "created_by": string;
+    "date_created": string;
+    "scopes": string[];
+    "username": string;
+    "full_name": string;
+    "real_name": string;
+    "icons": AppIcons;
+
+    /** Creates a new AppAuth instance. */
+    constructor($$source: Partial<AppAuth> = {}) {
+        if (!("created_by" in $$source)) {
+            this["created_by"] = "";
+        }
+        if (!("date_created" in $$source)) {
+            this["date_created"] = "";
+        }
+        if (!("scopes" in $$source)) {
+            this["scopes"] = [];
+        }
+        if (!("username" in $$source)) {
+            this["username"] = "";
+        }
+        if (!("full_name" in $$source)) {
+            this["full_name"] = "";
+        }
+        if (!("real_name" in $$source)) {
+            this["real_name"] = "";
+        }
+        if (!("icons" in $$source)) {
+            this["icons"] = (new AppIcons());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AppAuth instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AppAuth {
+        const $$createField2_0 = $$createType0;
+        const $$createField6_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("scopes" in $$parsedSource) {
+            $$parsedSource["scopes"] = $$createField2_0($$parsedSource["scopes"]);
+        }
+        if ("icons" in $$parsedSource) {
+            $$parsedSource["icons"] = $$createField6_0($$parsedSource["icons"]);
+        }
+        return new AppAuth($$parsedSource as Partial<AppAuth>);
+    }
+}
+
+export class AppBotUser {
+    "id": string;
+    "username": string;
+    "memberships_count": number;
+
+    /** Creates a new AppBotUser instance. */
+    constructor($$source: Partial<AppBotUser> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("username" in $$source)) {
+            this["username"] = "";
+        }
+        if (!("memberships_count" in $$source)) {
+            this["memberships_count"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AppBotUser instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AppBotUser {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AppBotUser($$parsedSource as Partial<AppBotUser>);
+    }
+}
+
+export class AppCommand {
+    "usage": string;
+    "desc": string;
+    "name": string;
+    "type": string;
+    "app": string;
+
+    /** Creates a new AppCommand instance. */
+    constructor($$source: Partial<AppCommand> = {}) {
+        if (!("usage" in $$source)) {
+            this["usage"] = "";
+        }
+        if (!("desc" in $$source)) {
+            this["desc"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("type" in $$source)) {
+            this["type"] = "";
+        }
+        if (!("app" in $$source)) {
+            this["app"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AppCommand instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AppCommand {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AppCommand($$parsedSource as Partial<AppCommand>);
+    }
+}
+
+export class AppIcons {
+    "image_original"?: string;
+    "image_24"?: string;
+    "image_32"?: string;
+    "image_36"?: string;
+    "image_48"?: string;
+    "image_64"?: string;
+    "image_72"?: string;
+    "image_96"?: string;
+    "image_128"?: string;
+    "image_192"?: string;
+    "image_512"?: string;
+    "image_1024"?: string;
+
+    /** Creates a new AppIcons instance. */
+    constructor($$source: Partial<AppIcons> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AppIcons instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AppIcons {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AppIcons($$parsedSource as Partial<AppIcons>);
+    }
+}
+
+export class AppProfile {
+    "id": string;
+    "name": string;
+    "developer_name": string;
+    "desc": string;
+    "long_desc": string;
+    "long_desc_formatted": string;
+    "url": string;
+    "support_url": string;
+    "config_url": string;
+    "app_card_color": string;
+    "installation_summary": string;
+    "team_id": string;
+    "enterprise_id": string;
+    "is_certified": boolean;
+    "is_directory_published": boolean;
+    "is_distributed": boolean;
+    "is_ai_app": boolean;
+    "is_agent_app": boolean;
+    "is_workflow_app": boolean;
+    "date_installed": number;
+    "commands": { [_ in string]?: AppCommand };
+    "categories": { [_ in string]?: json$0.RawMessage };
+    "screenshots": AppScreenshot[];
+    "icons": AppIcons;
+    "bot_user": AppBotUser;
+    "auth": AppAuth;
+    "security_compliance"?: json$0.RawMessage;
+
+    /** Creates a new AppProfile instance. */
+    constructor($$source: Partial<AppProfile> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("developer_name" in $$source)) {
+            this["developer_name"] = "";
+        }
+        if (!("desc" in $$source)) {
+            this["desc"] = "";
+        }
+        if (!("long_desc" in $$source)) {
+            this["long_desc"] = "";
+        }
+        if (!("long_desc_formatted" in $$source)) {
+            this["long_desc_formatted"] = "";
+        }
+        if (!("url" in $$source)) {
+            this["url"] = "";
+        }
+        if (!("support_url" in $$source)) {
+            this["support_url"] = "";
+        }
+        if (!("config_url" in $$source)) {
+            this["config_url"] = "";
+        }
+        if (!("app_card_color" in $$source)) {
+            this["app_card_color"] = "";
+        }
+        if (!("installation_summary" in $$source)) {
+            this["installation_summary"] = "";
+        }
+        if (!("team_id" in $$source)) {
+            this["team_id"] = "";
+        }
+        if (!("enterprise_id" in $$source)) {
+            this["enterprise_id"] = "";
+        }
+        if (!("is_certified" in $$source)) {
+            this["is_certified"] = false;
+        }
+        if (!("is_directory_published" in $$source)) {
+            this["is_directory_published"] = false;
+        }
+        if (!("is_distributed" in $$source)) {
+            this["is_distributed"] = false;
+        }
+        if (!("is_ai_app" in $$source)) {
+            this["is_ai_app"] = false;
+        }
+        if (!("is_agent_app" in $$source)) {
+            this["is_agent_app"] = false;
+        }
+        if (!("is_workflow_app" in $$source)) {
+            this["is_workflow_app"] = false;
+        }
+        if (!("date_installed" in $$source)) {
+            this["date_installed"] = 0;
+        }
+        if (!("commands" in $$source)) {
+            this["commands"] = {};
+        }
+        if (!("categories" in $$source)) {
+            this["categories"] = {};
+        }
+        if (!("screenshots" in $$source)) {
+            this["screenshots"] = [];
+        }
+        if (!("icons" in $$source)) {
+            this["icons"] = (new AppIcons());
+        }
+        if (!("bot_user" in $$source)) {
+            this["bot_user"] = (new AppBotUser());
+        }
+        if (!("auth" in $$source)) {
+            this["auth"] = (new AppAuth());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AppProfile instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AppProfile {
+        const $$createField20_0 = $$createType3;
+        const $$createField21_0 = $$createType4;
+        const $$createField22_0 = $$createType6;
+        const $$createField23_0 = $$createType1;
+        const $$createField24_0 = $$createType7;
+        const $$createField25_0 = $$createType8;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("commands" in $$parsedSource) {
+            $$parsedSource["commands"] = $$createField20_0($$parsedSource["commands"]);
+        }
+        if ("categories" in $$parsedSource) {
+            $$parsedSource["categories"] = $$createField21_0($$parsedSource["categories"]);
+        }
+        if ("screenshots" in $$parsedSource) {
+            $$parsedSource["screenshots"] = $$createField22_0($$parsedSource["screenshots"]);
+        }
+        if ("icons" in $$parsedSource) {
+            $$parsedSource["icons"] = $$createField23_0($$parsedSource["icons"]);
+        }
+        if ("bot_user" in $$parsedSource) {
+            $$parsedSource["bot_user"] = $$createField24_0($$parsedSource["bot_user"]);
+        }
+        if ("auth" in $$parsedSource) {
+            $$parsedSource["auth"] = $$createField25_0($$parsedSource["auth"]);
+        }
+        return new AppProfile($$parsedSource as Partial<AppProfile>);
+    }
+}
+
+export class AppScreenshot {
+    "id": string;
+    "image_440"?: string;
+    "image_1000"?: string;
+    "image_1600"?: string;
+    "image_original"?: string;
+
+    /** Creates a new AppScreenshot instance. */
+    constructor($$source: Partial<AppScreenshot> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AppScreenshot instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AppScreenshot {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AppScreenshot($$parsedSource as Partial<AppScreenshot>);
+    }
+}
+
+export class BotInfo {
+    "id": string;
+    "name": string;
+    "app_id"?: string;
+    "user_id"?: string;
+    "deleted"?: boolean;
+    "icons": AppIcons;
+
+    /** Creates a new BotInfo instance. */
+    constructor($$source: Partial<BotInfo> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("icons" in $$source)) {
+            this["icons"] = (new AppIcons());
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new BotInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): BotInfo {
+        const $$createField5_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("icons" in $$parsedSource) {
+            $$parsedSource["icons"] = $$createField5_0($$parsedSource["icons"]);
+        }
+        return new BotInfo($$parsedSource as Partial<BotInfo>);
+    }
+}
+
 export class Category {
     "channel_section_id": string;
     "name": string;
@@ -41,7 +396,7 @@ export class Category {
      * Creates a new Category instance from a string or object.
      */
     static createFrom($$source: any = {}): Category {
-        const $$createField7_0 = $$createType1;
+        const $$createField7_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("channel_ids_page" in $$parsedSource) {
             $$parsedSource["channel_ids_page"] = $$createField7_0($$parsedSource["channel_ids_page"]);
@@ -141,8 +496,8 @@ export class Channel {
         const $$createField18_0 = $$createType0;
         const $$createField19_0 = $$createType0;
         const $$createField20_0 = $$createType0;
-        const $$createField27_0 = $$createType3;
-        const $$createField30_0 = $$createType8;
+        const $$createField27_0 = $$createType11;
+        const $$createField30_0 = $$createType16;
         const $$createField31_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("shared_team_ids" in $$parsedSource) {
@@ -333,7 +688,12 @@ export class Message {
     "reply_users"?: string[];
     "blocks"?: json$0.RawMessage;
     "edited"?: json$0.RawMessage;
+    "bot_profile"?: json$0.RawMessage;
     "files"?: File[];
+    "bot_id"?: string;
+    "app_id"?: string;
+    "username"?: string;
+    "icons"?: AppIcons | null;
 
     /** Creates a new Message instance. */
     constructor($$source: Partial<Message> = {}) {
@@ -358,13 +718,17 @@ export class Message {
      */
     static createFrom($$source: any = {}): Message {
         const $$createField9_0 = $$createType0;
-        const $$createField12_0 = $$createType10;
+        const $$createField13_0 = $$createType18;
+        const $$createField17_0 = $$createType19;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("reply_users" in $$parsedSource) {
             $$parsedSource["reply_users"] = $$createField9_0($$parsedSource["reply_users"]);
         }
         if ("files" in $$parsedSource) {
-            $$parsedSource["files"] = $$createField12_0($$parsedSource["files"]);
+            $$parsedSource["files"] = $$createField13_0($$parsedSource["files"]);
+        }
+        if ("icons" in $$parsedSource) {
+            $$parsedSource["icons"] = $$createField17_0($$parsedSource["icons"]);
         }
         return new Message($$parsedSource as Partial<Message>);
     }
@@ -394,7 +758,7 @@ export class MessagesResponse {
      * Creates a new MessagesResponse instance from a string or object.
      */
     static createFrom($$source: any = {}): MessagesResponse {
-        const $$createField0_0 = $$createType11;
+        const $$createField0_0 = $$createType20;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("messages" in $$parsedSource) {
             $$parsedSource["messages"] = $$createField0_0($$parsedSource["messages"]);
@@ -452,7 +816,7 @@ export class SlackSession {
      * Creates a new SlackSession instance from a string or object.
      */
     static createFrom($$source: any = {}): SlackSession {
-        const $$createField1_0 = $$createType13;
+        const $$createField1_0 = $$createType22;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("workspaces" in $$parsedSource) {
             $$parsedSource["workspaces"] = $$createField1_0($$parsedSource["workspaces"]);
@@ -571,24 +935,33 @@ export class WorkspaceSession {
 
 // Private type creation functions
 const $$createType0 = $Create.Array($Create.Any);
-const $$createType1 = $Create.Struct({
+const $$createType1 = AppIcons.createFrom;
+const $$createType2 = AppCommand.createFrom;
+const $$createType3 = $Create.Map($Create.Any, $$createType2);
+const $$createType4 = $Create.Map($Create.Any, $Create.Any);
+const $$createType5 = AppScreenshot.createFrom;
+const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = AppBotUser.createFrom;
+const $$createType8 = AppAuth.createFrom;
+const $$createType9 = $Create.Struct({
     "channel_ids": $$createType0,
 });
-const $$createType2 = Message.createFrom;
-const $$createType3 = $Create.Nullable($$createType2);
-const $$createType4 = Tab.createFrom;
-const $$createType5 = $Create.Array($$createType4);
-const $$createType6 = $Create.Struct({
+const $$createType10 = Message.createFrom;
+const $$createType11 = $Create.Nullable($$createType10);
+const $$createType12 = Tab.createFrom;
+const $$createType13 = $Create.Array($$createType12);
+const $$createType14 = $Create.Struct({
     "type": $$createType0,
     "user": $$createType0,
 });
-const $$createType7 = $Create.Nullable($$createType6);
-const $$createType8 = $Create.Struct({
-    "tabs": $$createType5,
-    "posting_restricted_to": $$createType7,
+const $$createType15 = $Create.Nullable($$createType14);
+const $$createType16 = $Create.Struct({
+    "tabs": $$createType13,
+    "posting_restricted_to": $$createType15,
 });
-const $$createType9 = File.createFrom;
-const $$createType10 = $Create.Array($$createType9);
-const $$createType11 = $Create.Array($$createType2);
-const $$createType12 = WorkspaceSession.createFrom;
-const $$createType13 = $Create.Map($Create.Any, $$createType12);
+const $$createType17 = File.createFrom;
+const $$createType18 = $Create.Array($$createType17);
+const $$createType19 = $Create.Nullable($$createType1);
+const $$createType20 = $Create.Array($$createType10);
+const $$createType21 = WorkspaceSession.createFrom;
+const $$createType22 = $Create.Map($Create.Any, $$createType21);

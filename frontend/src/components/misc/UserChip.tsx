@@ -1,9 +1,9 @@
 import { createSignal, createEffect, Show } from "solid-js";
 import { useAuth } from "../../AuthContext";
-import styles from "./UserChip.module.css";
 import { resolveUser, getCachedUser } from "../../utils/userResolver";
 import type { UserProfile } from "../../../bindings/fastslack/shared";
 import { UserProfileCardTrigger } from "../UserProfileCard";
+import Mention from "./Mention";
 
 function UserChip(props: { userID: string }) {
   const { workspace } = useAuth();
@@ -23,17 +23,16 @@ function UserChip(props: { userID: string }) {
   });
 
   return (
-    <Show
-      when={user()}
-      fallback={<span class={styles.userChip}>@Loading...</span>}
-    >
+    <Show when={user()} fallback={<Mention text={"@" + props.userID} />}>
       {(u) => (
         <UserProfileCardTrigger workspaceID={workspace()!} profile={u()}>
-          <span class={styles.userChip}>
-            <span class={styles.name}>
-              @{u().profile.display_name || u().profile.real_name || "Unknown"}
-            </span>
-          </span>
+          <Mention
+            text={
+              "@" + u().profile.display_name ||
+              u().profile.real_name ||
+              "Unknown"
+            }
+          />
         </UserProfileCardTrigger>
       )}
     </Show>

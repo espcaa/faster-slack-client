@@ -1,5 +1,5 @@
 import { createStore } from "solid-js/store";
-import { Message, UserProfile } from "../bindings/fastslack/shared";
+import { AppProfile, BotInfo, Message, UserProfile } from "../bindings/fastslack/shared";
 
 interface ChatState {
   messages: Message[];
@@ -15,6 +15,8 @@ interface ChatState {
   >;
   threadReplies: Record<string, Message[]>;
   profiles: Record<string, UserProfile>;
+  bots: Record<string, AppProfile>;
+  botInfos: Record<string, BotInfo>;
 }
 
 export const [chatStore, setChatStore] = createStore<ChatState>({
@@ -25,6 +27,8 @@ export const [chatStore, setChatStore] = createStore<ChatState>({
   openThreads: {},
   threadReplies: {},
   profiles: {},
+  bots: {},
+  botInfos: {},
 });
 
 export const scrollPositions = new Map<string, number>();
