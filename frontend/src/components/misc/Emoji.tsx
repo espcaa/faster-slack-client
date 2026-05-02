@@ -9,6 +9,7 @@ export default function EmojiComponent(props: {
   name: string;
   bigVersion?: boolean;
   popover?: boolean;
+  fillContainer?: boolean;
 }) {
   const emojiView = (imgAdditionalStyle: JSX.CSSProperties = {}) => {
     return (
@@ -20,9 +21,16 @@ export default function EmojiComponent(props: {
               src={emoji()!.value}
               alt={`:${props.name}:`}
               style={{
-                width: merged.bigVersion ? "32px" : "20px",
-                height: merged.bigVersion ? "32px" : "20px",
-                "vertical-align": "middle",
+                width: merged.fillContainer
+                  ? "100%"
+                  : merged.bigVersion
+                    ? "32px"
+                    : "20px",
+                height: merged.fillContainer
+                  ? "100%"
+                  : merged.bigVersion
+                    ? "32px"
+                    : "20px",
                 ...imgAdditionalStyle,
               }}
             />
@@ -31,7 +39,11 @@ export default function EmojiComponent(props: {
       >
         <span
           style={{
-            "font-size": merged.bigVersion ? "32px" : "20px",
+            "font-size": merged.fillContainer
+              ? "100cqw"
+              : merged.bigVersion
+                ? "32px"
+                : "20px",
             "line-height": "1",
             "vertical-align": "middle",
           }}

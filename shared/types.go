@@ -306,6 +306,7 @@ type Category struct {
 }
 
 type AppIcons struct {
+	Emoji         string `json:"emoji,omitempty"`
 	ImageOriginal string `json:"image_original,omitempty"`
 	Image24       string `json:"image_24,omitempty"`
 	Image32       string `json:"image_32,omitempty"`
@@ -362,31 +363,31 @@ type BotInfo struct {
 }
 
 type AppProfile struct {
-	ID                   string                  `json:"id"`
-	Name                 string                  `json:"name"`
-	DeveloperName        string                  `json:"developer_name"`
-	Desc                 string                  `json:"desc"`
-	LongDesc             string                  `json:"long_desc"`
-	LongDescFormatted    string                  `json:"long_desc_formatted"`
-	URL                  string                  `json:"url"`
-	SupportURL           string                  `json:"support_url"`
-	ConfigURL            string                  `json:"config_url"`
-	AppCardColor         string                  `json:"app_card_color"`
-	InstallationSummary  string                  `json:"installation_summary"`
-	TeamID               string                  `json:"team_id"`
-	EnterpriseID         string                  `json:"enterprise_id"`
-	IsCertified          bool                    `json:"is_certified"`
-	IsDirectoryPublished bool                    `json:"is_directory_published"`
-	IsDistributed        bool                    `json:"is_distributed"`
-	IsAIApp              bool                    `json:"is_ai_app"`
-	IsAgentApp           bool                    `json:"is_agent_app"`
-	IsWorkflowApp        bool                    `json:"is_workflow_app"`
-	DateInstalled        int64                   `json:"date_installed"`
-	Commands             map[string]AppCommand   `json:"commands"`
+	ID                   string                     `json:"id"`
+	Name                 string                     `json:"name"`
+	DeveloperName        string                     `json:"developer_name"`
+	Desc                 string                     `json:"desc"`
+	LongDesc             string                     `json:"long_desc"`
+	LongDescFormatted    string                     `json:"long_desc_formatted"`
+	URL                  string                     `json:"url"`
+	SupportURL           string                     `json:"support_url"`
+	ConfigURL            string                     `json:"config_url"`
+	AppCardColor         string                     `json:"app_card_color"`
+	InstallationSummary  string                     `json:"installation_summary"`
+	TeamID               string                     `json:"team_id"`
+	EnterpriseID         string                     `json:"enterprise_id"`
+	IsCertified          bool                       `json:"is_certified"`
+	IsDirectoryPublished bool                       `json:"is_directory_published"`
+	IsDistributed        bool                       `json:"is_distributed"`
+	IsAIApp              bool                       `json:"is_ai_app"`
+	IsAgentApp           bool                       `json:"is_agent_app"`
+	IsWorkflowApp        bool                       `json:"is_workflow_app"`
+	DateInstalled        int64                      `json:"date_installed"`
+	Commands             map[string]AppCommand      `json:"commands"`
 	Categories           map[string]json.RawMessage `json:"categories"`
-	Screenshots          []AppScreenshot         `json:"screenshots"`
-	Icons                AppIcons                `json:"icons"`
-	BotUser              AppBotUser              `json:"bot_user"`
-	Auth                 AppAuth                 `json:"auth"`
-	SecurityCompliance   json.RawMessage         `json:"security_compliance,omitempty"`
+	Screenshots          []AppScreenshot            `json:"screenshots"`
+	Icons                AppIcons                   `json:"icons"`
+	BotUser              AppBotUser                 `json:"bot_user"`
+	Auth                 AppAuth                    `json:"auth"`
+	SecurityCompliance   json.RawMessage            `json:"security_compliance,omitempty"`
 }

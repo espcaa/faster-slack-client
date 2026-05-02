@@ -43,6 +43,10 @@
 }
 
 .avatar {
+    container-type: size;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 40px;
     height: 40px;
     border-radius: clamp(6px, min(22.222%, 12px), 12px);

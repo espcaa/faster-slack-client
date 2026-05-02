@@ -33,6 +33,15 @@ function ThreadRepliesButton(props: {
     const users = firstThreeReplyUsers();
     if (users.length > 0) {
       getReplyUsers(users);
+      // print all the users we got in profiles()
+      for (const profile of Object.values(profiles())) {
+        console.log(
+          "Got profile for user ID:",
+          profile.id,
+          "Profile:",
+          profile,
+        );
+      }
     }
   });
 

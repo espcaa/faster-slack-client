@@ -1,7 +1,7 @@
 import { createMemo, onMount, Show } from "solid-js";
-import type {
-  Message,
-  UserProfile,
+import {
+  type Message,
+  type UserProfile,
 } from "../../bindings/fastslack/shared/models";
 import styles from "./MessageItem.module.css";
 import ClankerChip from "./misc/ClankerChip";
@@ -16,6 +16,7 @@ import { UserProfileCardTrigger } from "./UserProfileCard";
 import { BotProfileCardTrigger, type InlineBotProfile } from "./BotProfileCard";
 import { chatStore, setChatStore } from "../ChatStore";
 import { ResolveBotInfo } from "../../bindings/fastslack/slackservice";
+import EmojiComponent from "./misc/Emoji";
 
 export type ThreadContext = "list" | "thread";
 
@@ -74,7 +75,24 @@ export default function MessageItem(props: {
   };
   const botAvatar = () => {
     const icons = (props.message as any).icons || botInfo()?.icons;
-    return icons?.image_72 || icons?.image_48 || icons?.image_36 || "";
+    if (icons?.emoji) {
+      const clean = icons.emoji.replace(/^:|:$/g, "");
+      return <EmojiComponent name={clean} fillContainer={true} />;
+    } else {
+      const url =
+        icons?.image_192 ||
+        icons?.image_72 ||
+        icons?.image_48 ||
+        icons?.image_36 ||
+        "";
+      return (
+        <img
+          src={url}
+          alt={`${botName()}'s profile picture`}
+          class={styles.avatar}
+        />
+      );
+    }
   };
   const botName = () =>
     (props.message as any).username || botInfo()?.name || "App";
@@ -102,13 +120,7 @@ export default function MessageItem(props: {
             workspaceID={props.workspaceID}
             inline={botInline()}
             fallbackName={botName()}
-            children={
-              <img
-                src={botAvatar()}
-                alt={`${botName()}'s profile picture`}
-                class={styles.avatar}
-              />
-            }
+            children={<div class={styles.avatar}>{botAvatar()}</div>}
           />
         </Show>
         <Show when={!props.showUser}>

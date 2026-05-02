@@ -129,6 +129,7 @@ export class AppCommand {
 }
 
 export class AppIcons {
+    "emoji"?: string;
     "image_original"?: string;
     "image_24"?: string;
     "image_32"?: string;
