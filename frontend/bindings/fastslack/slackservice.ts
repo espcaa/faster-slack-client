@@ -67,6 +67,14 @@ export function InvalidateEmojis(...names: string[]): $CancellablePromise<void> 
     return $Call.ByID(4123551535, names);
 }
 
+/**
+ * MarkAppReady signals that the Wails application has finished starting and
+ * it is now safe to emit events to the frontend.
+ */
+export function MarkAppReady(): $CancellablePromise<void> {
+    return $Call.ByID(1753164810);
+}
+
 export function QuickUserChannelSearch(teamID: string, query: string): $CancellablePromise<shared$0.SearchResult[]> {
     return $Call.ByID(3793405766, teamID, query).then(($result: any) => {
         return $$createType8($result);

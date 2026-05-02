@@ -17,6 +17,7 @@ import { BotProfileCardTrigger, type InlineBotProfile } from "./BotProfileCard";
 import { chatStore, setChatStore } from "../ChatStore";
 import { ResolveBotInfo } from "../../bindings/fastslack/slackservice";
 import EmojiComponent from "./misc/Emoji";
+import AttachmentCard from "./media/AttachmentCard";
 
 export type ThreadContext = "list" | "thread";
 
@@ -182,16 +183,26 @@ export default function MessageItem(props: {
             const images = (props.message.files ?? []).filter((f) =>
               f.mimetype.startsWith("image/"),
             );
+
+            const pdfs = (props.message.files ?? []).filter(
+              (f) => f.mimetype === "application/pdf",
+            );
+
             return (
-              <div style={{ "margin-top": "8px" }}>
-                {images.map((file, idx) => (
-                  <ImageComponent
-                    file={file}
-                    gallery={images}
-                    galleryIndex={idx}
-                  />
-                ))}
-              </div>
+              <>
+                <div style={{ "margin-top": "8px" }}>
+                  {images.map((file, idx) => (
+                    <ImageComponent
+                      file={file}
+                      gallery={images}
+                      galleryIndex={idx}
+                    />
+                  ))}
+                  {pdfs.map((file) => (
+                    <AttachmentCard file={file} />
+                  ))}
+                </div>
+              </>
             );
           })()}
         </Show>

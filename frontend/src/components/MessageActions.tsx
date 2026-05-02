@@ -1,10 +1,9 @@
 import { MdRoundChat, MdRoundDelete } from "solid-icons/md";
-import styles from "./MessageActions.module.css";
 import { chatStore, setChatStore } from "../ChatStore";
 import { Message } from "../../bindings/fastslack/shared";
-import { Show } from "solid-js";
 import { DeleteMessage } from "../../bindings/fastslack/slackservice";
 import { useAuth } from "../AuthContext";
+import Actions, { Action } from "./Actions";
 
 export default function MessageActions(props: {
   message: Message;
@@ -63,29 +62,24 @@ export default function MessageActions(props: {
     });
   }
 
-  return (
-    <Show when={props.canOpenThread || props.canDelete}>
-      <div class={styles.container}>
-        <Show when={props.canOpenThread}>
-          <button
-            class={styles.button}
-            title="Reply in thread"
-            onClick={handleThreadClick}
-          >
-            <MdRoundChat size={20} />
-          </button>{" "}
-        </Show>
+  const openThreadAction: Action = {
+    icon: <MdRoundChat size={20} />,
+    text: "Open thread",
+    onClick: handleThreadClick,
+  };
 
-        <Show when={props.canDelete}>
-          <button
-            class={styles.button}
-            title="Delete message"
-            onClick={handleDeleteClick}
-          >
-            <MdRoundDelete size={20} />
-          </button>
-        </Show>
-      </div>
-    </Show>
+  const deleteMessageAction: Action = {
+    icon: <MdRoundDelete size={20} />,
+    text: "Delete message",
+    onClick: handleDeleteClick,
+  };
+
+  return (
+    <Actions
+      actions={[
+        ...(props.canOpenThread ? [openThreadAction] : []),
+        ...(props.canDelete ? [deleteMessageAction] : []),
+      ]}
+    />
   );
 }

@@ -11,6 +11,10 @@ import (
 )
 
 func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
+	// Block until the Wails application has finished starting; emitting events
+	// before then panics inside wails because customEventProcessor is nil.
+	<-s.appReady()
+
 	app := application.Get()
 	if app == nil {
 		log.Printf("App not ready yet, dropping RTM event %s for team %s", event.Type, teamID)

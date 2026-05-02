@@ -3,6 +3,7 @@ import { File } from "../../../bindings/fastslack/shared";
 import { DownloadFile } from "../../../bindings/fastslack/slackservice";
 import styles from "./ImageComponent.module.css";
 import { decodeThumbTiny } from "../../../utils/thumb";
+import Actions, { Action } from "../Actions";
 
 const MAX_W = 360;
 const MAX_H = 480;
@@ -69,6 +70,12 @@ export default function ImageComponent(props: {
 
   const tinyPlaceholder = file.thumb_tiny;
 
+  const downloadAction: Action = {
+    icon: <MdRoundDownload size={20} />,
+    text: "Download",
+    onClick: handleDownload,
+  };
+
   return (
     <div
       class={styles.imageWrapper}
@@ -79,15 +86,7 @@ export default function ImageComponent(props: {
       }
     >
       <div class={styles.imageActions}>
-        <button
-          class={styles.actionButton}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDownload();
-          }}
-        >
-          <MdRoundDownload size={20} />
-        </button>
+        <Actions actions={[downloadAction]} />
       </div>
       {tinyPlaceholder && (
         <img

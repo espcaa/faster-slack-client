@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/kyokomi/emoji/v2"
@@ -34,6 +35,30 @@ type SlackService struct {
 	EmojiInfos   *lru.Cache[string, shared.Emoji]
 	BotProfiles  *lru.Cache[string, shared.AppProfile]
 	BotInfos     *lru.Cache[string, shared.BotInfo]
+
+	appReadyOnce sync.Once
+	appReadyCh   chan struct{}
+}
+
+// appReady returns a channel that is closed when the Wails application has
+// fully started and is safe to emit events on.
+func (s *SlackService) appReady() chan struct{} {
+	s.appReadyOnce.Do(func() {
+		s.appReadyCh = make(chan struct{})
+	})
+	return s.appReadyCh
+}
+
+// MarkAppReady signals that the Wails application has finished starting and
+// it is now safe to emit events to the frontend.
+func (s *SlackService) MarkAppReady() {
+	ch := s.appReady()
+	select {
+	case <-ch:
+		// already closed
+	default:
+		close(ch)
+	}
 }
 
 func (s *SlackService) ResolveBots(teamID string, appIDs []string) ([]shared.AppProfile, error) {
