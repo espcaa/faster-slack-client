@@ -1,7 +1,7 @@
 import { createEffect, createSignal, For } from "solid-js";
 import { Message, UserProfile } from "../../../bindings/fastslack/shared";
 import styles from "./ThreadRepliesButton.module.css";
-import { ResolveUsers } from "../../../bindings/fastslack/slackservice";
+import { resolveUsers } from "../../utils/userResolver";
 import { MdRoundArrow_forward_ios } from "solid-icons/md";
 
 function ThreadRepliesButton(props: {
@@ -23,7 +23,7 @@ function ThreadRepliesButton(props: {
     props.message.reply_users ? props.message.reply_users.slice(0, 3) : [];
 
   const getReplyUsers = async (userIds: string[]) => {
-    let userProfiles = await ResolveUsers(props.workspaceID, userIds);
+    let userProfiles = await resolveUsers(props.workspaceID, userIds);
     const profileMap: Record<string, UserProfile> = {};
     for (const p of userProfiles) profileMap[p.id] = p;
     setProfiles((prev) => ({ ...prev, ...profileMap }));

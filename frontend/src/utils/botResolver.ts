@@ -1,10 +1,10 @@
-import { ResolveUsers } from "../../bindings/fastslack/slackservice";
-import type { UserProfile } from "../../bindings/fastslack/shared";
+import { ResolveBots } from "../../bindings/fastslack/slackservice";
+import type { AppProfile } from "../../bindings/fastslack/shared";
 
-const cache = new Map<string, UserProfile>();
+const cache = new Map<string, AppProfile>();
 const queue = new Map<
   string,
-  { ids: Set<string>; waiters: { id: string; resolve: (p: UserProfile | null) => void }[] }
+  { ids: Set<string>; waiters: { id: string; resolve: (p: AppProfile | null) => void }[] }
 >();
 
 function flush(ws: string) {
@@ -21,7 +21,7 @@ function flush(ws: string) {
     return;
   }
 
-  ResolveUsers(ws, toFetch)
+  ResolveBots(ws, toFetch)
     .then((profiles) => {
       for (const p of profiles ?? []) {
         cache.set(`${ws}:${p.id}`, p);
@@ -35,11 +35,11 @@ function flush(ws: string) {
     });
 }
 
-export function getCachedUser(ws: string, id: string): UserProfile | null {
+export function getCachedBot(ws: string, id: string): AppProfile | null {
   return cache.get(`${ws}:${id}`) ?? null;
 }
 
-export function resolveUser(ws: string, id: string): Promise<UserProfile | null> {
+export function resolveBot(ws: string, id: string): Promise<AppProfile | null> {
   const cached = cache.get(`${ws}:${id}`);
   if (cached) return Promise.resolve(cached);
 
@@ -55,20 +55,20 @@ export function resolveUser(ws: string, id: string): Promise<UserProfile | null>
   });
 }
 
-export async function resolveUsers(
+export async function resolveBots(
   ws: string,
   ids: string[],
-): Promise<UserProfile[]> {
+): Promise<AppProfile[]> {
   const unique = [...new Set(ids.filter(Boolean))];
   if (unique.length === 0) return [];
-  const results = await Promise.all(unique.map((id) => resolveUser(ws, id)));
-  return results.filter((p): p is UserProfile => !!p);
+  const results = await Promise.all(unique.map((id) => resolveBot(ws, id)));
+  return results.filter((p): p is AppProfile => !!p);
 }
 
-export function primeUser(ws: string, profile: UserProfile) {
+export function primeBot(ws: string, profile: AppProfile) {
   if (profile?.id) cache.set(`${ws}:${profile.id}`, profile);
 }
 
-export function invalidateUser(ws: string, id: string) {
+export function invalidateBot(ws: string, id: string) {
   cache.delete(`${ws}:${id}`);
 }

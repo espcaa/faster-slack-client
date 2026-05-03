@@ -1,7 +1,7 @@
 import { onCleanup, onMount } from "solid-js";
 import { Events } from "@wailsio/runtime";
 import { Message } from "../../bindings/fastslack/shared";
-import { ResolveUsers } from "../../bindings/fastslack/slackservice";
+import { resolveUsers } from "./userResolver";
 import { setChatStore } from "../ChatStore";
 
 export function dedupe(msgs: Message[]): Message[] {
@@ -33,7 +33,7 @@ export function mergeIncoming(
 export async function fetchProfiles(teamID: string, msgs: Message[]) {
   const userIDs = [...new Set(msgs.map((m) => m.user).filter(Boolean))];
   if (!userIDs.length) return;
-  const resolved = await ResolveUsers(teamID, userIDs);
+  const resolved = await resolveUsers(teamID, userIDs);
   const map: Record<string, any> = {};
   for (const p of resolved) map[p.id] = p;
   setChatStore("profiles", (prev) => ({ ...prev, ...map }));

@@ -11,8 +11,8 @@ import {
   GetAllCategories,
   GetChannels,
   GetIMs,
-  ResolveUsers,
 } from "../../bindings/fastslack/slackservice";
+import { resolveUsers } from "../utils/userResolver";
 import { Logout } from "../../bindings/fastslack/slackauthservice";
 import Scrollbar from "./misc/Scrollbar";
 import styles from "./Sidebar.module.css";
@@ -74,7 +74,7 @@ export default function Sidebar(props: Props) {
       if (userIDs.length === 0) return {};
 
       try {
-        const userList = await ResolveUsers(props.teamID, userIDs);
+        const userList = await resolveUsers(props.teamID, userIDs);
         const profileMap: Record<string, any> = {};
         userList.forEach((u) => {
           profileMap[u.id] = u;

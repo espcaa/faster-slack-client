@@ -1,8 +1,6 @@
 import { createResource, Show } from "solid-js";
-import {
-  GetChannelInfo,
-  ResolveUsers,
-} from "../../../bindings/fastslack/slackservice";
+import { GetChannelInfo } from "../../../bindings/fastslack/slackservice";
+import { resolveUser } from "../../utils/userResolver";
 import { GetAvatarUrl } from "../../utils/pfp";
 import styles from "./ChannelHeader.module.css";
 
@@ -25,8 +23,7 @@ export default function ChannelHeader(props: {
       return false;
     },
     async ({ team, userId }) => {
-      const profiles = await ResolveUsers(team, [userId]);
-      return profiles?.[0];
+      return (await resolveUser(team, userId)) ?? undefined;
     },
   );
 

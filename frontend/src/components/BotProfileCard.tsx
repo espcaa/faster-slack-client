@@ -1,7 +1,7 @@
 import { createMemo, createSignal, onMount, Show } from "solid-js";
 import styles from "./BotProfileCard.module.css";
 import { chatStore, setChatStore } from "../ChatStore";
-import { ResolveBots } from "../../bindings/fastslack/slackservice";
+import { resolveBot } from "../utils/botResolver";
 import Popover from "./misc/PopoverTrigger";
 
 export type InlineBotProfile = {
@@ -39,12 +39,12 @@ export default function BotProfileCard(props: {
       return;
     }
     try {
-      const bots = await ResolveBots(props.workspaceID, [id]);
-      const map: Record<string, any> = {};
-      for (const b of bots) map[b.id] = b;
-      setChatStore("bots", (prev) => ({ ...prev, ...map }));
+      const bot = await resolveBot(props.workspaceID, id);
+      if (bot) {
+        setChatStore("bots", (prev) => ({ ...prev, [bot.id]: bot }));
+      }
     } catch (e) {
-      console.warn("ResolveBots failed", e);
+      console.warn("resolveBot failed", e);
     } finally {
       setFetched(true);
     }

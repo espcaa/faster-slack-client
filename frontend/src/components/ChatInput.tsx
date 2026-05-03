@@ -7,10 +7,10 @@ import {
   createResource,
 } from "solid-js";
 import {
-  ResolveUsers,
   SendMessage,
   SendTyping,
 } from "../../bindings/fastslack/slackservice";
+import { resolveUsers } from "../utils/userResolver";
 import styles from "./ChatInput.module.css";
 import { Events } from "@wailsio/runtime";
 import { useAuth } from "../AuthContext";
@@ -115,7 +115,7 @@ export default function ChatInput(props: {
     async ({ ws, users }) => {
       if (users.length === 0) return null;
 
-      const userProfiles = await ResolveUsers(ws || "", users);
+      const userProfiles = await resolveUsers(ws || "", users);
       const displayNames = userProfiles
         .map(
           (u) =>
