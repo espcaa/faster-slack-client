@@ -25,8 +25,11 @@ Events.On("auth:success", async () => {
     const firstTeam = Object.keys(s.workspaces)[0];
     setWorkspace(firstTeam);
     setAuthed(true);
-    MaximiseWindow();
   }
+});
+
+Events.On("onboarding:success", async () => {
+  MaximiseWindow();
 });
 
 Events.On("auth:logout", () => {

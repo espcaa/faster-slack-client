@@ -111,7 +111,7 @@ h3 {
 
 .btn--primary {
     --btn-bg: var(--color-primary);
-    --btn-color: white;
+    --btn-color: var(--color-canvas);
     border-color: transparent;
 }
 

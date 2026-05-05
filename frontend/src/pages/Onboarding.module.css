@@ -1,0 +1,43 @@
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid var(--color-primary-muted);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--inline-space) * 2);
+    min-height: 100dvh;
+}
+
+.avatar {
+    width: 128px;
+    height: 128px;
+    border-radius: 20px;
+    background-size: cover;
+    background-position: center;
+}
+
+.proceedButton {
+    padding: 0.5em 1.5em;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-canvas);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
