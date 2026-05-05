@@ -166,9 +166,10 @@ type UserbootResponse struct {
 }
 
 type MessagesResponse struct {
-	Messages   []Message `json:"messages"`
-	HasMore    bool      `json:"has_more"`
-	NextCursor string    `json:"next_cursor"`
+	Messages []Message `json:"messages"`
+	HasMore  bool      `json:"has_more"`
+	OldestTs string    `json:"oldest_ts,omitempty"`
+	LatestTs string    `json:"latest_ts,omitempty"`
 }
 
 type Message struct {

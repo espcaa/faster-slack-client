@@ -6,16 +6,17 @@ import {
   Show,
   createResource,
 } from "solid-js";
-import {
-  SendMessage,
-  SendTyping,
-} from "../../bindings/fastslack/slackservice";
-import { resolveUsers } from "../utils/userResolver";
+import { SendMessage, SendTyping } from "../../bindings/fastslack/slackservice";
 import styles from "./ChatInput.module.css";
 import { Events } from "@wailsio/runtime";
 import { useAuth } from "../AuthContext";
 import { Message } from "../../bindings/fastslack/shared";
-import { setChatStore } from "../ChatStore";
+import {
+  addMessages,
+  chatStore,
+  ensureUserInfo,
+  removeMessage,
+} from "../stores/ChatStore";
 
 export default function ChatInput(props: {
   teamID: string;
@@ -75,15 +76,7 @@ export default function ChatInput(props: {
       thread_ts: props.threadTS,
     });
 
-    if (props.threadTS) {
-      const tts = props.threadTS;
-      setChatStore("threadReplies", tts, (prev) => [
-        ...(prev || []),
-        optimisticMessage,
-      ]);
-    } else {
-      setChatStore("messages", (prev) => [optimisticMessage, ...prev]);
-    }
+    addMessages(props.channelID, [optimisticMessage]);
 
     const previousText = val;
     setText("");
@@ -97,12 +90,9 @@ export default function ChatInput(props: {
     ).catch((e) => {
       console.error("Failed to send message", e);
       if (props.threadTS) {
-        const tts = props.threadTS;
-        setChatStore("threadReplies", tts, (prev) =>
-          (prev || []).filter((m) => m.ts !== tempTS),
-        );
+        removeMessage(props.channelID, tempTS);
       } else {
-        setChatStore("messages", (prev) => prev.filter((m) => m.ts !== tempTS));
+        removeMessage(props.channelID, tempTS);
       }
       setText(previousText);
       if (inputRef) inputRef.value = previousText;
@@ -115,7 +105,13 @@ export default function ChatInput(props: {
     async ({ ws, users }) => {
       if (users.length === 0) return null;
 
-      const userProfiles = await resolveUsers(ws || "", users);
+      for (const userId of users) {
+        ensureUserInfo(ws!, userId);
+      }
+
+      const userProfiles = users
+        .map((id) => chatStore.profiles[id])
+        .filter((p) => p);
       const displayNames = userProfiles
         .map(
           (u) =>

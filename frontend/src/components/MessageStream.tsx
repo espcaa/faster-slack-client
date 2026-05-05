@@ -1,67 +1,116 @@
-import { For, JSX, Show } from "solid-js";
+import { Virtualizer, VirtualizerHandle } from "virtua/solid";
+import MessageItem from "./MessageItem";
+import { chatStore } from "../stores/ChatStore";
 import { Message } from "../../bindings/fastslack/shared";
-import MessageItem, { ThreadContext } from "./MessageItem";
-import DateDivider, { isDifferentDay } from "./DateDivider";
-import { chatStore } from "../ChatStore";
+import Scrollbar from "./misc/Scrollbar";
+import styles from "./MessageStream.module.css";
+import { createEffect, on, Show } from "solid-js";
+
+const GROUP_WINDOW_MS = 2 * 60 * 1000;
 
 export default function MessageStream(props: {
-  messages: Message[];
-  // "up" = channel
-  // "down" = thread
   direction: "up" | "down";
   channelID: string;
-  workspaceID: string;
-  threadContext: ThreadContext;
-  onThreadClick?: (m: Message) => void;
-  renderAfter?: (msg: Message, i: number) => JSX.Element;
+  threadID: string | null;
+  onThreadClick: (m: Message) => void;
 }) {
+  let containerRef!: HTMLDivElement;
+  let virtuaRef: VirtualizerHandle | undefined;
+
+  function shouldGroupWithPrev(
+    prev: Message | undefined,
+    cur: Message | undefined,
+  ) {
+    if (!prev || !cur) return false;
+    if (!prev.user || !cur.user) return false;
+    if (prev.user !== cur.user) return false;
+
+    const prevTs = Number(prev.ts) * 1000;
+    const curTs = Number(cur.ts) * 1000;
+    if (!Number.isFinite(prevTs) || !Number.isFinite(curTs)) return false;
+
+    if (curTs - prevTs > GROUP_WINDOW_MS) return false;
+
+    return true;
+  }
+
+  const ids = () => {
+    const channel = chatStore.channels[props.channelID];
+    if (!channel) return [];
+    if (props.threadID) {
+      return (channel.threadMessageIds[props.threadID] || []).filter(
+        (id) => id !== props.threadID,
+      );
+    }
+    return channel.channelMessageIds || [];
+  };
+
+  const items = () => {
+    const arr = ids();
+    return arr.map((id, index) => ({ id, index }));
+  };
+
+  createEffect(
+    on(
+      () => ids(),
+      (currentIds, prevIds) => {
+        const isFirstLoad = !prevIds || prevIds.length === 0;
+        if (isFirstLoad && currentIds.length > 0) {
+          queueMicrotask(() => {
+            virtuaRef?.scrollToIndex(currentIds.length - 1, { align: "end" });
+          });
+        }
+      },
+    ),
+  );
+
   return (
-    <For each={props.messages}>
-      {(msg, i) => {
-        const olderNeighbor = () =>
-          props.direction === "up"
-            ? props.messages[i() + 1]
-            : props.messages[i() - 1];
+    <div style={{ position: "relative", height: "100%" }}>
+      <div
+        ref={containerRef}
+        style={{
+          height: "100%",
+          overflow: "auto",
+          "scrollbar-width": "none",
+          "-ms-overflow-style": "none",
+          display: "flex",
+          "flex-direction": "column",
+        }}
+        class={styles.listContainer}
+      >
+        <Show when={props.direction === "down"}>
+          <div style={{ "flex-grow": 1 }} />
+        </Show>
 
-        const authorKey = (m: typeof msg) => m.user || m.bot_id || "";
+        <Virtualizer
+          data={items()}
+          shift={props.direction === "up"}
+          ref={(v) => (virtuaRef = v)}
+        >
+          {(item) => {
+            const channel = chatStore.channels[props.channelID];
+            const cur = channel.messages[item.id];
 
-        const showHeader = () => {
-          const n = olderNeighbor();
-          if (!n) return true;
-          if (authorKey(n) !== authorKey(msg)) return true;
-          const diff = Math.abs(parseFloat(msg.ts) - parseFloat(n.ts));
-          return diff > 180;
-        };
+            const prevId = item.index > 0 ? items()[item.index - 1].id : null;
+            const prev = prevId ? channel.messages[prevId] : undefined;
 
-        const showDateDivider = () => {
-          const n = olderNeighbor();
-          if (!n) return false;
-          // thread view: always show divider for the first message.
-          if (props.direction === "down" && i() <= 1) return false;
-          return isDifferentDay(n.ts, msg.ts);
-        };
+            const grouped = shouldGroupWithPrev(prev, cur);
+            const groupStart = !grouped;
 
-        return (
-          <>
-            <Show when={props.direction === "down" && showDateDivider()}>
-              <DateDivider ts={msg.ts} />
-            </Show>
-            <MessageItem
-              channelID={props.channelID}
-              message={msg}
-              profile={chatStore.profiles[msg.user]}
-              showUser={showHeader()}
-              workspaceID={props.workspaceID}
-              threadContext={props.threadContext}
-              onThreadClick={props.onThreadClick}
-            />
-            {props.renderAfter?.(msg, i())}
-            <Show when={props.direction === "up" && showDateDivider()}>
-              <DateDivider ts={msg.ts} />
-            </Show>
-          </>
-        );
-      }}
-    </For>
+            return (
+              <MessageItem
+                channelID={props.channelID}
+                message={cur}
+                onThreadClick={props.onThreadClick}
+                inThread={!!props.threadID}
+                showUser={groupStart}
+              />
+            );
+          }}
+        </Virtualizer>
+      </div>
+
+      <Scrollbar container={containerRef} trackRight={2} />
+    </div>
   );
 }

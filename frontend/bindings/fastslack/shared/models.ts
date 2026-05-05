@@ -329,42 +329,6 @@ export class AppScreenshot {
     }
 }
 
-export class BotInfo {
-    "id": string;
-    "name": string;
-    "app_id"?: string;
-    "user_id"?: string;
-    "deleted"?: boolean;
-    "icons": AppIcons;
-
-    /** Creates a new BotInfo instance. */
-    constructor($$source: Partial<BotInfo> = {}) {
-        if (!("id" in $$source)) {
-            this["id"] = "";
-        }
-        if (!("name" in $$source)) {
-            this["name"] = "";
-        }
-        if (!("icons" in $$source)) {
-            this["icons"] = (new AppIcons());
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new BotInfo instance from a string or object.
-     */
-    static createFrom($$source: any = {}): BotInfo {
-        const $$createField5_0 = $$createType1;
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("icons" in $$parsedSource) {
-            $$parsedSource["icons"] = $$createField5_0($$parsedSource["icons"]);
-        }
-        return new BotInfo($$parsedSource as Partial<BotInfo>);
-    }
-}
-
 export class Category {
     "channel_section_id": string;
     "name": string;
@@ -738,7 +702,8 @@ export class Message {
 export class MessagesResponse {
     "messages": Message[];
     "has_more": boolean;
-    "next_cursor": string;
+    "oldest_ts"?: string;
+    "latest_ts"?: string;
 
     /** Creates a new MessagesResponse instance. */
     constructor($$source: Partial<MessagesResponse> = {}) {
@@ -747,9 +712,6 @@ export class MessagesResponse {
         }
         if (!("has_more" in $$source)) {
             this["has_more"] = false;
-        }
-        if (!("next_cursor" in $$source)) {
-            this["next_cursor"] = "";
         }
 
         Object.assign(this, $$source);

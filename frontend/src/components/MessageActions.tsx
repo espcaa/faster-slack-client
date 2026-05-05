@@ -1,5 +1,4 @@
 import { MdRoundChat, MdRoundDelete } from "solid-icons/md";
-import { chatStore, setChatStore } from "../ChatStore";
 import { Message } from "../../bindings/fastslack/shared";
 import { DeleteMessage } from "../../bindings/fastslack/slackservice";
 import { useAuth } from "../AuthContext";
@@ -10,37 +9,19 @@ export default function MessageActions(props: {
   channelID: string;
   canOpenThread: boolean;
   canDelete: boolean;
+  handleThreadClick: (message: Message) => void;
 }) {
   const { message } = props;
   const { workspace } = useAuth();
 
-  function handleThreadClick() {
-    setChatStore({
-      threadTS: message.thread_ts || message.ts,
-      threadParent: message,
-      openThreads: {
-        ...chatStore.openThreads,
-        [props.channelID]: {
-          threadTs: message.thread_ts || message.ts,
-          threadParent: message,
-        },
-      },
-    });
-  }
-
   async function handleDeleteClick() {
     // optimistic remove the message from UI
     if (props.message.thread_ts) {
-      setChatStore("threadReplies", props.message.thread_ts, (prev) =>
-        prev ? prev.filter((m) => m.ts !== props.message.ts) : [],
-      );
     } else {
-      setChatStore("messages", (prev) =>
-        prev ? prev.filter((m) => m.ts !== props.message.ts) : [],
-      );
     }
 
     const previousMessage = props.message;
+    previousMessage;
 
     await DeleteMessage(
       workspace()!,
@@ -51,13 +32,7 @@ export default function MessageActions(props: {
       console.error("Failed to delete message", err);
       // revert the optimistic update
       if (props.message.thread_ts) {
-        setChatStore("threadReplies", props.message.thread_ts, (prev) =>
-          prev ? [...prev, previousMessage] : [previousMessage],
-        );
       } else {
-        setChatStore("messages", (prev) =>
-          prev ? [...prev, previousMessage] : [previousMessage],
-        );
       }
     });
   }
@@ -65,7 +40,9 @@ export default function MessageActions(props: {
   const openThreadAction: Action = {
     icon: <MdRoundChat size={20} />,
     text: "Open thread",
-    onClick: handleThreadClick,
+    onClick: () => {
+      props.handleThreadClick(message);
+    },
   };
 
   const deleteMessageAction: Action = {

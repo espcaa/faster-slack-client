@@ -5,8 +5,10 @@ export const GetAvatarUrl = (
   workspaceID: string,
   size: number = 48,
 ) => {
-  const hash = profile.profile.avatar_hash;
-  const userId = profile.id;
+  const hash = profile?.profile?.avatar_hash;
+  const userId = profile?.id;
+
+  if (!hash || !userId) return "";
 
   return `https://ca.slack-edge.com/${workspaceID}-${userId}-${hash}-${size}`;
 };

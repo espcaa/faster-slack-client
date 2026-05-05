@@ -1,39 +1,26 @@
-import { createEffect, createSignal, For } from "solid-js";
-import { Message, UserProfile } from "../../../bindings/fastslack/shared";
+import { createEffect, For } from "solid-js";
+import { Message } from "../../../bindings/fastslack/shared";
 import styles from "./ThreadRepliesButton.module.css";
-import { resolveUsers } from "../../utils/userResolver";
 import { MdRoundArrow_forward_ios } from "solid-icons/md";
+import { chatStore, ensureUserInfo } from "../../stores/ChatStore";
+import { GetAvatarUrl } from "../../utils/pfp";
 
 function ThreadRepliesButton(props: {
   message: Message;
   workspaceID: string;
   onClick: () => void;
 }) {
-  const getAvatarUrl = (profile?: UserProfile) => {
-    if (!profile || !profile.profile) return "";
-    const hash = profile.profile.avatar_hash;
-    const userId = profile.id;
-    const workspaceID = props.workspaceID;
-
-    return `https://ca.slack-edge.com/${workspaceID}-${userId}-${hash}-48`;
-  };
-
-  const [profiles, setProfiles] = createSignal<Record<string, UserProfile>>({});
   const firstThreeReplyUsers = () =>
-    props.message.reply_users ? props.message.reply_users.slice(0, 3) : [];
+    props.message.reply_users?.slice(0, 3) ?? [];
 
-  const getReplyUsers = async (userIds: string[]) => {
-    let userProfiles = await resolveUsers(props.workspaceID, userIds);
-    const profileMap: Record<string, UserProfile> = {};
-    for (const p of userProfiles) profileMap[p.id] = p;
-    setProfiles((prev) => ({ ...prev, ...profileMap }));
-  };
-
+  // trigger profile fetching
   createEffect(() => {
     const users = firstThreeReplyUsers();
-    if (users.length > 0) {
-      getReplyUsers(users);
-    }
+    if (users.length === 0) return;
+
+    users.forEach((userId) => {
+      ensureUserInfo(props.workspaceID, userId);
+    });
   });
 
   return (
@@ -41,16 +28,22 @@ function ThreadRepliesButton(props: {
       <div class={styles.insideContainer}>
         <div class={styles.pfpContainer}>
           <For each={firstThreeReplyUsers()}>
-            {(userID) => (
-              <img
-                src={getAvatarUrl(profiles()[userID])}
-                alt={`${profiles()[userID]?.profile.display_name}'s profile picture`}
-                class={styles.avatar}
-              />
-            )}
+            {(userID) => {
+              const profile = () => chatStore.profiles[userID];
+
+              return (
+                <img
+                  src={GetAvatarUrl(profile(), props.workspaceID, 32)}
+                  alt={profile()?.profile.display_name || "User avatar"}
+                  class={styles.avatar}
+                />
+              );
+            }}
           </For>
         </div>
+
         <div class={styles.replyCount}>{props.message.reply_count} replies</div>
+
         <div class={styles.replyLastTime}>
           Last reply at{" "}
           {new Date(
@@ -61,6 +54,7 @@ function ThreadRepliesButton(props: {
           })}
         </div>
       </div>
+
       <MdRoundArrow_forward_ios class={styles.arrowIcon} />
     </button>
   );

@@ -8,7 +8,6 @@ export {
     AppIcons,
     AppProfile,
     AppScreenshot,
-    BotInfo,
     Category,
     Channel,
     Emoji,
