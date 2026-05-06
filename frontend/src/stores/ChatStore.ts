@@ -131,9 +131,6 @@ export const addMessages = (channelId: string, messages: Message[]) => {
   ensureChannel(channelId);
   if (messages.length === 0) return;
 
-  // Batch every per-message mutation into a single store update so we don't
-  // fire ~4×N reactive updates (and avoid re-walking the message graph for
-  // each of them).
   setChatStore(
     "channels",
     channelId,
