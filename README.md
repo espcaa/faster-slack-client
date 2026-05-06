@@ -16,7 +16,9 @@ Right now this is just a proof of concept/me learning, so this is fairly basic, 
 
 ## Installation
 
-to install, either grab the latest release from the releases page, or build it by yourself.
+(we only have macos support for now)\
+\
+to install, either grab the latest .app from [release page](https://github.com/espcaa/faster-slack-client/releases), or build it by yourself.
 
 ### Building from source
 
