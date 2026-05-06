@@ -1,5 +1,39 @@
 # faster-slack-client
 
-(current demo, might be wildly out of date)
+This is an attempt at making an alternative client for slack. The goal was to have something lighter and faster than the official one which is built on electron.
 
-<img width="500" alt="Screenshot 2026-04-25 at 01 26 46" src="https://github.com/user-attachments/assets/bd832d9d-a77e-40c1-8855-fa775b08200d" />
+## Demo
+
+## Installation
+
+to install, either grab the latest release from the releases page, or build it by yourself.
+
+### Building from source
+
+To build from source, you need to have bun and go installed. Then, clone the repository and run:\
+\
+
+```bash
+go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+```
+
+(wails installation)\
+\
+
+```bash
+bun install
+wails3 package
+```
+
+## Roadmap
+
+- [x] Basic UI
+- [x] Authentication
+- [x] Fetching channels and messages
+- [x] Sending messages
+- [x] Real-time updates
+- [x] Threaded messages
+- [ ] File uploads
+- [ ] Reactions
+- [ ] Notifications
+- [ ] ~no memory leaks~ (hopefully)
