@@ -3,10 +3,10 @@ import styles from "./UserProfileCard.module.css";
 import { UserProfile } from "../../bindings/fastslack/shared";
 import { GetAvatarUrl } from "../utils/pfp";
 import EmojiComponent from "./misc/Emoji";
+import { useNavigation } from "../NavigationContext";
 import { GetIMByUserID } from "../../bindings/fastslack/slackservice";
 import { MdRoundChat_bubble_outline } from "solid-icons/md";
 import Popover from "./misc/PopoverTrigger";
-import { setActiveChannel } from "../stores/ChatStore";
 
 function formatLocalTime(tzOffset: number): string {
   const localTime = new Date(
@@ -25,12 +25,13 @@ export default function UserProfileCard(props: {
   workspaceID: string;
 }) {
   const avatarUrl = GetAvatarUrl(props.profile, props.workspaceID, 192);
+  const navigation = useNavigation();
 
   const handleMessageClick = async () => {
     try {
       const channel = await GetIMByUserID(props.workspaceID, props.profile.id);
       if (channel?.id) {
-        setActiveChannel(channel.id);
+        navigation.selectChannel(channel.id);
       }
     } catch (e) {
       alert("Failed to open DM.");
@@ -43,11 +44,11 @@ export default function UserProfileCard(props: {
         <img src={avatarUrl} class={styles.avatar} alt="" />
         <div class={styles.info}>
           <div class={styles.displayName}>
-            {props.profile.profile?.display_name ||
-              props.profile.profile?.real_name}
+            {props.profile.profile.display_name ||
+              props.profile.profile.real_name}
           </div>
-          <Show when={props.profile.profile?.title}>
-            <div class={styles.title}>{props.profile.profile?.title}</div>
+          <Show when={props.profile.profile.title}>
+            <div class={styles.title}>{props.profile.profile.title}</div>
           </Show>
         </div>
       </div>
@@ -58,12 +59,12 @@ export default function UserProfileCard(props: {
           {formatLocalTime(props.profile.tz_offset)}
         </div>
       </Show>
-      <Show when={props.profile.profile?.status_text}>
+      <Show when={props.profile.profile.status_text}>
         <div class={styles.status}>
           <EmojiComponent
-            name={props.profile.profile?.status_emoji?.replace(/^:|:$/g, "")}
+            name={props.profile.profile.status_emoji?.replace(/^:|:$/g, "")}
           />
-          {props.profile.profile?.status_text}
+          {props.profile.profile.status_text}
         </div>
       </Show>
       <button class={`${styles.messageBtn}`} onClick={handleMessageClick}>

@@ -4,8 +4,4 @@ import wails from "@wailsio/runtime/plugins/vite";
 
 export default defineConfig({
   plugins: [solid(), wails("./bindings")],
-  esbuild: {
-    jsx: "automatic",
-    jsxImportSource: "solid-js",
-  },
 });

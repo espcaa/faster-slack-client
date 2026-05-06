@@ -12,7 +12,7 @@ import { SearchResult } from "../../bindings/fastslack/shared";
 import { QuickUserChannelSearch } from "../../bindings/fastslack/slackservice";
 import { useAuth } from "../AuthContext";
 import SlickScrollbar from "./misc/Scrollbar";
-import { setActiveChannel } from "../stores/ChatStore";
+import { useNavigation } from "../NavigationContext";
 
 export default function SearchBar() {
   const [visible, setVisible] = createSignal(false);
@@ -33,7 +33,7 @@ export default function SearchBar() {
   function selectResult(idx: number) {
     const r = results()[idx];
     if (!r) return;
-    setActiveChannel(r.ChannelID);
+    useNavigation().selectChannel(r.ChannelID);
     cleanUp();
   }
 

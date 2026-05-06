@@ -1,17 +1,20 @@
+import { createEffect, createSignal, on, Show } from "solid-js";
+import styles from "./MessageList.module.css";
 import threadStyles from "./ThreadView.module.css";
 import Scrollbar from "./misc/Scrollbar";
 import { Message } from "../../bindings/fastslack/shared";
+import { GetThreadMessages } from "../../bindings/fastslack/slackservice";
+import { chatStore, setChatStore } from "../ChatStore";
 import ChatInput from "./ChatInput";
 import MessageStream from "./MessageStream";
-import MessageItem from "./MessageItem";
-import { createEffect, onCleanup } from "solid-js";
 import {
-  chatStore,
-  fetchLatestThreadReplies,
-  fetchThreadMessagesAfter,
-  isFetchingThread,
-  setActiveThread,
-} from "../stores/ChatStore";
+  dedupe,
+  fetchProfiles,
+  mergeIncoming,
+  useSlackMessageEvents,
+} from "../utils/messageStream";
+
+const threadScrollPositions = new Map<string, number>();
 
 export default function ThreadView(props: {
   teamID: string;
@@ -19,34 +22,96 @@ export default function ThreadView(props: {
   parentMessage: Message;
 }) {
   let containerRef!: HTMLDivElement;
+  const [loading, setLoading] = createSignal(false);
+  const [fetchingOlder, setFetchingOlder] = createSignal(false);
+  const [nextCursor, setNextCursor] = createSignal<string | null>(null);
 
-  // boot the thread: ensure store + fetch latest if we have nothing
-  createEffect(() => {
-    const channelID = props.channelID;
-    const threadTs = props.parentMessage.ts;
+  const threadTS = () => props.parentMessage.ts;
+  const replies = () => chatStore.threadReplies[threadTS()] || [];
+  const setReplies = (updater: (prev: Message[]) => Message[]) =>
+    setChatStore("threadReplies", threadTS(), (prev) => updater(prev || []));
 
-    console.log(`[ThreadView] createEffect triggered for thread ${threadTs}`);
-    console.log(`[ThreadView] Parent message:`, props.parentMessage);
+  const loadReplies = async () => {
+    setLoading(true);
+    setReplies(() => [props.parentMessage]);
+    setNextCursor(null);
 
-    // Set this thread as active
-    setActiveThread(threadTs);
+    const first = await GetThreadMessages(
+      props.teamID,
+      props.channelID,
+      threadTS(),
+      "",
+    );
+    let msgs = first?.messages || [];
+    let cursor = first?.next_cursor || "";
 
-    const existing = chatStore.channels[channelID]?.threadMessageIds[threadTs];
-    console.log(`[ThreadView] Existing thread messages:`, existing);
-    // The parent message itself lives in threadMessageIds[threadTs], so a
-    // length of 1 (or 0) means we still need to fetch the actual replies.
-    const replyCount = existing
-      ? existing.filter((id) => id !== threadTs).length
-      : 0;
-    if (replyCount === 0) {
-      console.log(`[ThreadView] Fetching thread replies`);
-      fetchLatestThreadReplies(props.teamID, channelID, threadTs);
+    if (cursor === "cache") {
+      const fresh = await GetThreadMessages(
+        props.teamID,
+        props.channelID,
+        threadTS(),
+        "cache",
+      );
+      msgs = fresh?.messages || [];
+      cursor = fresh?.next_cursor || "";
     }
-  });
 
-  onCleanup(() => {
-    // Clear active thread when component unmounts
-    setActiveThread(undefined);
+    setReplies(() => dedupe(msgs));
+    setNextCursor(cursor || null);
+    fetchProfiles(props.teamID, msgs);
+    setLoading(false);
+    requestAnimationFrame(() => {
+      containerRef.scrollTop = threadScrollPositions.get(threadTS()) ?? 0;
+    });
+  };
+
+  const loadOlderReplies = async () => {
+    const cursor = nextCursor();
+    if (!cursor || fetchingOlder()) return;
+
+    setFetchingOlder(true);
+    try {
+      const page = await GetThreadMessages(
+        props.teamID,
+        props.channelID,
+        threadTS(),
+        cursor,
+      );
+      if (page) {
+        setReplies((prev) => dedupe([...prev, ...page.messages]));
+        setNextCursor(page.next_cursor || null);
+        fetchProfiles(props.teamID, page.messages);
+      }
+    } finally {
+      setFetchingOlder(false);
+    }
+  };
+
+  createEffect(
+    on(threadTS, (ts, prevTS) => {
+      if (prevTS) threadScrollPositions.set(prevTS, containerRef.scrollTop);
+      loadReplies();
+    }),
+  );
+
+  const handleScroll = (e: Event) => {
+    const el = e.currentTarget as HTMLDivElement;
+    threadScrollPositions.set(threadTS(), el.scrollTop);
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
+    if (nearBottom && !fetchingOlder()) loadOlderReplies();
+  };
+
+  useSlackMessageEvents({
+    teamID: props.teamID,
+    accept: (data) =>
+      data.channel === props.channelID &&
+      (data.thread_ts === threadTS() || data.ts === threadTS()),
+    onNew: (msg) => setReplies((prev) => mergeIncoming(prev, msg, false)),
+    onChanged: (updated) =>
+      setReplies((prev) =>
+        prev.map((m) => (m.ts === updated.ts ? updated : m)),
+      ),
+    onDeleted: (ts) => setReplies((prev) => prev.filter((m) => m.ts !== ts)),
   });
 
   return (
@@ -56,69 +121,51 @@ export default function ThreadView(props: {
         <button
           class={threadStyles.close}
           onClick={() => {
-            setActiveThread(undefined);
+            setChatStore("openThreads", props.channelID, undefined!);
+            setChatStore({ threadTS: null, threadParent: null });
           }}
         >
           ✕
         </button>
       </div>
       <div class={threadStyles.listWrapper}>
-        <div class={threadStyles.list} ref={containerRef}>
-          <MessageItem
-            channelID={props.channelID}
-            message={props.parentMessage}
-            showUser={true}
-            inThread={true}
-            onThreadClick={() => {}}
-          />
-          <div class={threadStyles.dividerContainer}>
-            <span class={threadStyles.replyCount}>
-              {props.parentMessage.reply_count || 0}{" "}
-              {(props.parentMessage.reply_count || 0) === 1
-                ? "reply"
-                : "replies"}
-            </span>
-            <div class={threadStyles.dividerLine} />
-          </div>
+        <div
+          class={threadStyles.list}
+          ref={containerRef}
+          onScroll={handleScroll}
+        >
           <MessageStream
+            messages={replies()}
+            direction="down"
             channelID={props.channelID}
-            threadID={props.parentMessage.ts}
-            onThreadClick={() => {}}
-            direction="up"
-            // renderAfter={(_msg, i) => (
-            //   <Show when={i === 0 && replies().length > 1}>
-            //     <div class={threadStyles.replyDivider}>
-            //       <span class={threadStyles.replyCount}>
-            //         {(props.parentMessage.reply_count || 0) - 1}{" "}
-            //         {(props.parentMessage.reply_count || 0) - 1 === 1
-            //           ? "reply"
-            //           : "replies"}
-            //       </span>
-            //       <div class={threadStyles.dividerLine} />
-            //     </div>
-            //   </Show>
-            // )}
-            onReachBottom={() => {
-              const lastTs =
-                chatStore.channels[props.channelID]?.threadMessageIds[
-                  props.parentMessage.ts
-                ]?.slice(-1)[0];
-              if (!lastTs) return;
-              fetchThreadMessagesAfter(
-                props.teamID,
-                props.channelID,
-                props.parentMessage.ts,
-                lastTs,
-              );
-            }}
-            isLoadingMore={() => isFetchingThread(props.parentMessage.ts)}
+            workspaceID={props.teamID}
+            threadContext="thread"
+            renderAfter={(_msg, i) => (
+              <Show when={i === 0 && replies().length > 1}>
+                <div class={threadStyles.replyDivider}>
+                  <span class={threadStyles.replyCount}>
+                    {(props.parentMessage.reply_count || 0) - 1}{" "}
+                    {(props.parentMessage.reply_count || 0) - 1 === 1
+                      ? "reply"
+                      : "replies"}
+                  </span>
+                  <div class={threadStyles.dividerLine} />
+                </div>
+              </Show>
+            )}
           />
 
+          <Show when={loading()}>
+            <div class={styles.loading}>Loading thread...</div>
+          </Show>
+          <Show when={fetchingOlder()}>
+            <div class={styles.loading}>Loading more replies...</div>
+          </Show>
           <div class={threadStyles.inputContainer}>
             <ChatInput
               teamID={props.teamID}
               channelID={props.channelID}
-              threadTS={props.parentMessage.ts}
+              threadTS={threadTS()}
             />
           </div>
         </div>

@@ -51,44 +51,14 @@ export function GetIMs(teamID: string): $CancellablePromise<shared$0.Channel[]> 
     });
 }
 
-export function GetLatestMessages(teamID: string, channelID: string): $CancellablePromise<shared$0.MessagesResponse | null> {
-    return $Call.ByID(872464680, teamID, channelID).then(($result: any) => {
+export function GetMessages(teamID: string, channelID: string, cursor: string): $CancellablePromise<shared$0.MessagesResponse | null> {
+    return $Call.ByID(1012973511, teamID, channelID, cursor).then(($result: any) => {
         return $$createType6($result);
     });
 }
 
-export function GetLatestThreadReplies(teamID: string, channelID: string, threadTS: string): $CancellablePromise<shared$0.MessagesResponse | null> {
-    return $Call.ByID(3143471204, teamID, channelID, threadTS).then(($result: any) => {
-        return $$createType6($result);
-    });
-}
-
-export function GetMessagesAfter(teamID: string, channelID: string, after: string): $CancellablePromise<shared$0.MessagesResponse | null> {
-    return $Call.ByID(1668011503, teamID, channelID, after).then(($result: any) => {
-        return $$createType6($result);
-    });
-}
-
-export function GetMessagesAround(teamID: string, channelID: string, anchor: string): $CancellablePromise<shared$0.MessagesResponse | null> {
-    return $Call.ByID(3937011346, teamID, channelID, anchor).then(($result: any) => {
-        return $$createType6($result);
-    });
-}
-
-export function GetMessagesBefore(teamID: string, channelID: string, before: string): $CancellablePromise<shared$0.MessagesResponse | null> {
-    return $Call.ByID(722489696, teamID, channelID, before).then(($result: any) => {
-        return $$createType6($result);
-    });
-}
-
-export function GetThreadRepliesAfter(teamID: string, channelID: string, threadTS: string, after: string): $CancellablePromise<shared$0.MessagesResponse | null> {
-    return $Call.ByID(1373955833, teamID, channelID, threadTS, after).then(($result: any) => {
-        return $$createType6($result);
-    });
-}
-
-export function GetThreadRepliesBefore(teamID: string, channelID: string, threadTS: string, before: string): $CancellablePromise<shared$0.MessagesResponse | null> {
-    return $Call.ByID(3750336238, teamID, channelID, threadTS, before).then(($result: any) => {
+export function GetThreadMessages(teamID: string, channelID: string, threadTS: string, cursor: string): $CancellablePromise<shared$0.MessagesResponse | null> {
+    return $Call.ByID(4013703191, teamID, channelID, threadTS, cursor).then(($result: any) => {
         return $$createType6($result);
     });
 }
@@ -97,6 +67,10 @@ export function InvalidateEmojis(...names: string[]): $CancellablePromise<void> 
     return $Call.ByID(4123551535, names);
 }
 
+/**
+ * MarkAppReady signals that the Wails application has finished starting and
+ * it is now safe to emit events to the frontend.
+ */
 export function MarkAppReady(): $CancellablePromise<void> {
     return $Call.ByID(1753164810);
 }
@@ -107,21 +81,27 @@ export function QuickUserChannelSearch(teamID: string, query: string): $Cancella
     });
 }
 
-export function ResolveBots(teamID: string, appIDs: string[]): $CancellablePromise<{ [_ in string]?: shared$0.AppProfile }> {
-    return $Call.ByID(3221068625, teamID, appIDs).then(($result: any) => {
+export function ResolveBotInfo(teamID: string, botID: string): $CancellablePromise<shared$0.BotInfo | null> {
+    return $Call.ByID(962068100, teamID, botID).then(($result: any) => {
         return $$createType10($result);
+    });
+}
+
+export function ResolveBots(teamID: string, appIDs: string[]): $CancellablePromise<shared$0.AppProfile[]> {
+    return $Call.ByID(3221068625, teamID, appIDs).then(($result: any) => {
+        return $$createType12($result);
     });
 }
 
 export function ResolveEmojis(teamID: string, names: string[]): $CancellablePromise<shared$0.Emoji[]> {
     return $Call.ByID(1381900964, teamID, names).then(($result: any) => {
-        return $$createType12($result);
+        return $$createType14($result);
     });
 }
 
-export function ResolveUsers(teamID: string, userIDs: string[]): $CancellablePromise<{ [_ in string]?: shared$0.UserProfile }> {
+export function ResolveUsers(teamID: string, userIDs: string[]): $CancellablePromise<shared$0.UserProfile[]> {
     return $Call.ByID(2167812529, teamID, userIDs).then(($result: any) => {
-        return $$createType14($result);
+        return $$createType16($result);
     });
 }
 
@@ -143,9 +123,11 @@ const $$createType5 = shared$0.MessagesResponse.createFrom;
 const $$createType6 = $Create.Nullable($$createType5);
 const $$createType7 = shared$0.SearchResult.createFrom;
 const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = shared$0.AppProfile.createFrom;
-const $$createType10 = $Create.Map($Create.Any, $$createType9);
-const $$createType11 = shared$0.Emoji.createFrom;
+const $$createType9 = shared$0.BotInfo.createFrom;
+const $$createType10 = $Create.Nullable($$createType9);
+const $$createType11 = shared$0.AppProfile.createFrom;
 const $$createType12 = $Create.Array($$createType11);
-const $$createType13 = shared$0.UserProfile.createFrom;
-const $$createType14 = $Create.Map($Create.Any, $$createType13);
+const $$createType13 = shared$0.Emoji.createFrom;
+const $$createType14 = $Create.Array($$createType13);
+const $$createType15 = shared$0.UserProfile.createFrom;
+const $$createType16 = $Create.Array($$createType15);

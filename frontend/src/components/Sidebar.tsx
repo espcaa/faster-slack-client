@@ -1,5 +1,4 @@
 import {
-  createEffect,
   createResource,
   createSignal,
   For,
@@ -13,6 +12,7 @@ import {
   GetChannels,
   GetIMs,
 } from "../../bindings/fastslack/slackservice";
+import { resolveUsers } from "../utils/userResolver";
 import { Logout } from "../../bindings/fastslack/slackauthservice";
 import Scrollbar from "./misc/Scrollbar";
 import styles from "./Sidebar.module.css";
@@ -21,7 +21,6 @@ import { Events } from "@wailsio/runtime";
 import EmojiComponent from "./misc/Emoji";
 import ChannelItem from "./ChannelItem";
 import { MdRoundMessage, MdRoundStar, MdRoundTag } from "solid-icons/md";
-import { chatStore, ensureUserInfo } from "../stores/ChatStore";
 
 interface Props {
   teamID: string;
@@ -40,7 +39,6 @@ export default function Sidebar(props: Props) {
     () => props.teamID,
     (teamID) => GetChannels(teamID),
   );
-
   const [ims] = createResource(
     () => props.teamID,
     (teamID) => GetIMs(teamID),
@@ -60,7 +58,6 @@ export default function Sidebar(props: Props) {
 
   onMount(() => {
     loadCategories();
-
     Events.On("slack:categories_updated", (e) => {
       if (e.data.teamID === props.teamID) {
         setCategories(e.data.categories);
@@ -68,18 +65,26 @@ export default function Sidebar(props: Props) {
     });
   });
 
-  createEffect(() => {
-    const ids = ims()
-      ?.map((im) => im.user)
-      .filter((id): id is string => !!id)
-      .join(",");
+  const [profiles] = createResource(
+    () => ims(),
+    async (currentIms) => {
+      const userIDs =
+        currentIms?.map((im) => im.user).filter((id): id is string => !!id) ||
+        [];
+      if (userIDs.length === 0) return {};
 
-    if (!ids) return;
-
-    ids.split(",").forEach((id) => {
-      ensureUserInfo(props.teamID, id);
-    });
-  });
+      try {
+        const userList = await resolveUsers(props.teamID, userIDs);
+        const profileMap: Record<string, any> = {};
+        userList.forEach((u) => {
+          profileMap[u.id] = u;
+        });
+        return profileMap;
+      } catch (e) {
+        return {};
+      }
+    },
+  );
 
   const grouped = () => {
     const allChannels = channels() ?? [];
@@ -156,13 +161,11 @@ export default function Sidebar(props: Props) {
                           <MdRoundMessage size={16} />
                         </div>
                       </Match>
-
                       <Match when={group.type === "channels"}>
                         <div class={styles.iconCard}>
                           <MdRoundTag size={16} />
                         </div>
                       </Match>
-
                       <Match when={group.type === "starred"}>
                         <div class={styles.iconCard}>
                           <MdRoundStar size={16} />
@@ -175,14 +178,13 @@ export default function Sidebar(props: Props) {
                         (group.type === "stars" ? "Starred" : "Section")}
                     </p>
                   </div>
-
                   <For each={group.channels}>
                     {(ch) => (
                       <ChannelItem
                         channel={ch}
                         teamID={props.teamID}
                         userProfile={
-                          ch.user ? chatStore.profiles[ch.user] : undefined
+                          ch.user ? profiles()?.[ch.user] : undefined
                         }
                       />
                     )}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fastslack/shared"
-	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
@@ -127,9 +126,6 @@ func (c *Client) DoWithQuery(teamID string, method string, params url.Values, qu
 }
 
 func (c *Client) DoEdge(teamID string, resource string, payload map[string]any) (json.RawMessage, error) {
-	if c == nil {
-		return nil, fmt.Errorf("client not initialized")
-	}
 	ws, ok := c.Session.Workspaces[teamID]
 	if !ok {
 		return nil, errors.New("unknown workspace: " + teamID)

@@ -25,10 +25,6 @@ function parseMrkdwn(text: string): RichTextElement[] {
 }
 
 export function parseAngleToken(content: string): RichTextElement {
-  if (content.startsWith(":")) {
-    const name = content.slice(1, content.indexOf(":", 1));
-    return { type: "emoji", name };
-  }
   if (content.startsWith("@"))
     return { type: "user", user_id: content.slice(1).split("|")[0] };
   if (content.startsWith("#")) {
@@ -89,9 +85,7 @@ export default function SlackText(props: {
   const innerElements: RichTextElement[] =
     props.text.type === "mrkdwn"
       ? parseMrkdwn(props.text.text)
-      : props.text.emoji
-        ? parseInlineMarkdown(props.text.text)
-        : [{ type: "text", text: props.text.text }];
+      : [{ type: "text", text: props.text.text }];
 
   const section: RichTextSubElement = {
     type: "rich_text_section",

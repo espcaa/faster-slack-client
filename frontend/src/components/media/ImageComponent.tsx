@@ -8,11 +8,6 @@ import Actions, { Action } from "../Actions";
 const MAX_W = 360;
 const MAX_H = 480;
 
-// URLs we've already fully loaded at least once in this session. Used to
-// avoid showing the blurry placeholder + fade-in every time virtua remounts
-// an item during scroll.
-const loadedUrls = new Set<string>();
-
 export default function ImageComponent(props: {
   file: File;
   gallery?: File[];
@@ -63,8 +58,6 @@ export default function ImageComponent(props: {
   };
 
   const highResUrl = getBestThumbnail(file);
-  const proxiedUrl = `/proxy/file?url=${encodeURIComponent(highResUrl!)}`;
-  const alreadyLoaded = loadedUrls.has(proxiedUrl);
   const dims = getNaturalDims(file);
 
   let displayW: number | null = null;
@@ -95,7 +88,7 @@ export default function ImageComponent(props: {
       <div class={styles.imageActions}>
         <Actions actions={[downloadAction]} />
       </div>
-      {tinyPlaceholder && !alreadyLoaded && (
+      {tinyPlaceholder && (
         <img
           src={decodeThumbTiny(tinyPlaceholder).dataUrl}
           alt=""
@@ -104,19 +97,14 @@ export default function ImageComponent(props: {
         />
       )}
       <img
-        src={proxiedUrl}
+        src={`/proxy/file?url=${encodeURIComponent(highResUrl!)}`}
         alt={file.name}
         loading="lazy"
         width={displayW ?? undefined}
         height={displayH ?? undefined}
         class={styles.image}
-        style={
-          alreadyLoaded ? { opacity: 1, transition: "none" } : undefined
-        }
         onLoad={(e) => {
-          const img = e.currentTarget as HTMLImageElement;
-          img.style.opacity = "1";
-          loadedUrls.add(proxiedUrl);
+          (e.currentTarget as HTMLImageElement).style.opacity = "1";
         }}
       />
     </div>

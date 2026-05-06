@@ -1,20 +1,26 @@
-import { Show } from "solid-js";
+import { createSignal, createEffect, Show } from "solid-js";
 import { useAuth } from "../../AuthContext";
+import { resolveUser, getCachedUser } from "../../utils/userResolver";
+import type { UserProfile } from "../../../bindings/fastslack/shared";
 import { UserProfileCardTrigger } from "../UserProfileCard";
 import Mention from "./Mention";
-import { chatStore, ensureUserInfo } from "../../stores/ChatStore";
 
 function UserChip(props: { userID: string }) {
   const { workspace } = useAuth();
 
-  const user = () => {
+  const ws = workspace();
+  const [user, setUser] = createSignal<UserProfile | null>(
+    ws ? getCachedUser(ws, props.userID) : null,
+  );
+
+  createEffect(() => {
     const ws = workspace();
-    if (!ws) return null;
-
-    ensureUserInfo(ws, props.userID);
-
-    return chatStore.profiles[props.userID];
-  };
+    if (!ws) return;
+    if (user()) return;
+    resolveUser(ws, props.userID).then((p) => {
+      if (p) setUser(p);
+    });
+  });
 
   return (
     <Show when={user()} fallback={<Mention text={"@" + props.userID} />}>
@@ -22,8 +28,9 @@ function UserChip(props: { userID: string }) {
         <UserProfileCardTrigger workspaceID={workspace()!} profile={u()}>
           <Mention
             text={
-              "@" +
-              (u().profile.display_name || u().profile.real_name || "Unknown")
+              "@" + u().profile.display_name ||
+              u().profile.real_name ||
+              "Unknown"
             }
           />
         </UserProfileCardTrigger>

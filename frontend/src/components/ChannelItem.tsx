@@ -1,9 +1,9 @@
 import { Show } from "solid-js";
 import { Channel } from "../../bindings/fastslack/shared";
 import styles from "./Sidebar.module.css";
+import { useNavigation } from "../NavigationContext";
 import { MdRoundLock } from "solid-icons/md";
 import { GetAvatarUrl } from "../utils/pfp";
-import { chatStore, setActiveChannel } from "../stores/ChatStore";
 
 interface ChannelItemProps {
   channel: Channel;
@@ -12,16 +12,14 @@ interface ChannelItemProps {
 }
 
 export default function ChannelItem(props: ChannelItemProps) {
-  const isActive = () => chatStore.currentChannelId === props.channel.id;
+  const navigation = useNavigation();
+  const isActive = () => navigation.selectedChannel() === props.channel.id;
 
   return (
     <div
       class={styles.item}
       classList={{ [styles.active]: isActive() }}
-      onClick={() => (
-        setActiveChannel(props.channel.id),
-        console.log("Channel clicked", props.channel)
-      )}
+      onClick={() => navigation.selectChannel(props.channel.id)}
     >
       <Show
         when={props.channel.is_im}

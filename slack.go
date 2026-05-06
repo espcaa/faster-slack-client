@@ -15,10 +15,13 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
+// unicodeEmojiMap maps Slack-style shortcodes (without colons) to their
+// unicode glyphs for standard emojis.
 var unicodeEmojiMap = func() map[string]string {
 	m := emoji.CodeMap()
 	out := make(map[string]string, len(m))
 	for code, glyph := range m {
+		// CodeMap keys look like ":hear_no_evil:" — strip the colons.
 		out[strings.Trim(code, ":")] = glyph
 	}
 	return out
@@ -37,6 +40,8 @@ type SlackService struct {
 	appReadyCh   chan struct{}
 }
 
+// appReady returns a channel that is closed when the Wails application has
+// fully started and is safe to emit events on.
 func (s *SlackService) appReady() chan struct{} {
 	s.appReadyOnce.Do(func() {
 		s.appReadyCh = make(chan struct{})
@@ -44,6 +49,8 @@ func (s *SlackService) appReady() chan struct{} {
 	return s.appReadyCh
 }
 
+// MarkAppReady signals that the Wails application has finished starting and
+// it is now safe to emit events to the frontend.
 func (s *SlackService) MarkAppReady() {
 	ch := s.appReady()
 	select {
@@ -54,52 +61,12 @@ func (s *SlackService) MarkAppReady() {
 	}
 }
 
-func (s *SlackService) ResolveBots(teamID string, appIDs []string) (map[string]shared.AppProfile, error) {
+func (s *SlackService) ResolveBots(teamID string, appIDs []string) ([]shared.AppProfile, error) {
 	var missing []string
-	result := make(map[string]shared.AppProfile)
+	var result []shared.AppProfile
 	seen := make(map[string]struct{}, len(appIDs))
 
 	for _, id := range appIDs {
-		if id == "" || seen[id] != struct{}{} {
-			seen[id] = struct{}{}
-
-			if profile, ok := s.BotProfiles.Get(id); ok {
-				result[id] = profile
-			} else {
-				missing = append(missing, id)
-			}
-		}
-	}
-
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-
-	for _, id := range missing {
-		wg.Add(1)
-		go func(botID string) {
-			defer wg.Done()
-			profile, err := s.Client.GetAppProfile(teamID, botID)
-			if err != nil {
-				return
-			}
-			s.BotProfiles.Add(profile.ID, *profile)
-
-			mu.Lock()
-			result[botID] = *profile
-			mu.Unlock()
-		}(id)
-	}
-	wg.Wait()
-
-	return result, nil
-}
-
-func (s *SlackService) ResolveUsers(teamID string, userIDs []string) (map[string]shared.UserProfile, error) {
-	var missing []string
-	result := make(map[string]shared.UserProfile)
-	seen := make(map[string]struct{}, len(userIDs))
-
-	for _, id := range userIDs {
 		if id == "" {
 			continue
 		}
@@ -108,24 +75,66 @@ func (s *SlackService) ResolveUsers(teamID string, userIDs []string) (map[string
 		}
 		seen[id] = struct{}{}
 
-		if profile, ok := s.UserProfiles.Get(id); ok {
-			result[id] = profile
+		if profile, ok := s.BotProfiles.Get(id); ok {
+			result = append(result, profile)
 		} else {
 			missing = append(missing, id)
 		}
 	}
 
-	if len(missing) == 0 {
-		return result, nil
+	for _, id := range missing {
+		profile, err := s.Client.GetAppProfile(teamID, id)
+		if err != nil {
+			log.Printf("Failed to resolve app profile %s: %v", id, err)
+			continue
+		}
+		s.BotProfiles.Add(profile.ID, *profile)
+		result = append(result, *profile)
 	}
 
-	fetched, err := s.Client.GetUserProfiles(teamID, missing)
+	return result, nil
+}
+
+func (s *SlackService) ResolveBotInfo(teamID, botID string) (*shared.BotInfo, error) {
+	if botID == "" {
+		return nil, fmt.Errorf("bot id required")
+	}
+	if s.BotInfos != nil {
+		if info, ok := s.BotInfos.Get(botID); ok {
+			return &info, nil
+		}
+	}
+	info, err := s.Client.GetBotInfo(teamID, botID)
 	if err != nil {
 		return nil, err
 	}
-	for _, profile := range fetched {
-		s.UserProfiles.Add(profile.ID, profile)
-		result[profile.ID] = profile
+	if s.BotInfos != nil && info != nil {
+		s.BotInfos.Add(info.ID, *info)
+	}
+	return info, nil
+}
+
+func (s *SlackService) ResolveUsers(teamID string, userIDs []string) ([]shared.UserProfile, error) {
+	var missing []string
+	var result []shared.UserProfile
+
+	for _, id := range userIDs {
+		if profile, ok := s.UserProfiles.Get(id); ok {
+			result = append(result, profile)
+		} else {
+			missing = append(missing, id)
+		}
+	}
+
+	if len(missing) > 0 {
+		fetched, err := s.Client.GetUserProfiles(teamID, missing)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range fetched {
+			s.UserProfiles.Add(p.ID, p)
+			result = append(result, p)
+		}
 	}
 	return result, nil
 }
@@ -184,6 +193,9 @@ func (s *SlackService) InvalidateEmojis(names ...string) {
 }
 
 func (s *SlackService) Boot() error {
+	if err := store.InitMessageDB(); err != nil {
+		log.Printf("Failed to init message DB: %v\n", err)
+	}
 
 	if s.States == nil {
 		s.States = make(map[string]*store.WorkspaceState)
@@ -279,44 +291,24 @@ func (s *SlackService) GetChannels(teamID string) []shared.Channel {
 	return channels
 }
 
-func (s *SlackService) GetLatestMessages(teamID, channelID string) (*shared.MessagesResponse, error) {
+func (s *SlackService) GetMessages(teamID, channelID, cursor string) (*shared.MessagesResponse, error) {
+	if cursor == "" {
+		cached, err := store.GetCachedMessages(teamID, channelID, "", 100)
+		if err == nil && len(cached) > 0 {
+			return &shared.MessagesResponse{Messages: cached, HasMore: true, NextCursor: "cache"}, nil
+		}
+	}
 
-	resp, err := s.Client.GetConversationsMessagesBefore(teamID, channelID, "")
+	if cursor == "cache" {
+		cursor = ""
+	}
 
+	resp, err := s.Client.GetConversationMessages(teamID, channelID, cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
-}
-
-func (s *SlackService) GetMessagesBefore(teamID, channelID, before string) (*shared.MessagesResponse, error) {
-
-	resp, err := s.Client.GetConversationsMessagesBefore(teamID, channelID, before)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-func (s *SlackService) GetMessagesAfter(teamID, channelID, after string) (*shared.MessagesResponse, error) {
-
-	resp, err := s.Client.GetConversationsMessagesAfter(teamID, channelID, after)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-func (s *SlackService) GetMessagesAround(teamID, channelID, anchor string) (*shared.MessagesResponse, error) {
-	resp, err := s.Client.GetConversationsMessagesAround(teamID, channelID, anchor)
-	if err != nil {
-		return nil, err
-	}
+	go store.SaveMessages(teamID, channelID, resp.Messages)
 	return resp, nil
 }
 
@@ -372,27 +364,25 @@ func (s *SlackService) SendMessage(teamID, channelID string, blocks string, thre
 	return msgResp.TS, nil
 }
 
-func (c *SlackService) GetLatestThreadReplies(teamID, channelID, threadTS string) (*shared.MessagesResponse, error) {
-	resp, err := c.Client.GetThreadRepliesLatest(teamID, channelID, threadTS, "")
-	if err != nil {
-		return nil, err
+func (c *SlackService) GetThreadMessages(teamID, channelID, threadTS, cursor string) (*shared.MessagesResponse, error) {
+	if cursor == "" {
+		cached, err := store.GetCachedMessages(teamID, channelID, threadTS, 100)
+		// only use cache if we have more than just the parent message
+		if err == nil && len(cached) > 1 {
+			return &shared.MessagesResponse{Messages: cached, HasMore: false, NextCursor: "cache"}, nil
+		}
 	}
-	return resp, nil
-}
 
-func (c *SlackService) GetThreadRepliesBefore(teamID, channelID, threadTS, before string) (*shared.MessagesResponse, error) {
-	resp, err := c.Client.GetThreadRepliesBefore(teamID, channelID, threadTS, before)
-	if err != nil {
-		return nil, err
+	if cursor == "cache" {
+		cursor = ""
 	}
-	return resp, nil
-}
 
-func (c *SlackService) GetThreadRepliesAfter(teamID, channelID, threadTS, after string) (*shared.MessagesResponse, error) {
-	resp, err := c.Client.GetThreadRepliesAfter(teamID, channelID, threadTS, after)
+	resp, err := c.Client.GetThreadReplies(teamID, channelID, threadTS, cursor)
 	if err != nil {
 		return nil, err
 	}
+
+	go store.SaveMessages(teamID, channelID, resp.Messages)
 	return resp, nil
 }
 
@@ -482,6 +472,10 @@ func (s *SlackService) GetIMByUserID(teamID, userID string) (*shared.Channel, er
 func (s *SlackService) DeleteMessage(teamID, channelID, threadTs, ts string) error {
 	if err := s.Client.DeleteMessage(teamID, channelID, ts); err != nil {
 		return fmt.Errorf("failed to delete message: %w", err)
+	}
+
+	if err := store.DeleteMessage(teamID, channelID, threadTs, ts); err != nil {
+		log.Printf("Failed to delete message from database: %v", err)
 	}
 
 	payload, err := json.Marshal(map[string]string{

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fastslack/shared"
 	"fastslack/slack"
+	"fastslack/store"
 	"log"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -38,6 +39,7 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 			}
 
 			changedEvent.Message.Raw = event.Raw
+			store.UpsertMessage(teamID, event.Channel, changedEvent.Message)
 
 			// send event to frontend
 			app.Event.Emit("slack:message_changed", string(event.Raw))
@@ -45,10 +47,31 @@ func (s *SlackService) handleRTMEvent(teamID string, event slack.RTMEvent) {
 		case "message_deleted":
 			log.Printf("Message deleted in team %s: %s", teamID, event.Text)
 
+			err := store.DeleteMessage(teamID, event.Channel, event.ThreadTs, event.Ts)
+			if err != nil {
+				log.Printf("Failed to delete message from database: %v", err)
+			}
+
 			// send event to frontend
 			app.Event.Emit("slack:message_deleted", string(event.Raw))
 		default:
 			log.Printf("New message in team %s: %s", teamID, event.Text)
+			store.UpsertMessage(teamID, event.Channel, shared.Message{
+				Ts:       event.Ts,
+				User:     event.UserID(),
+				Text:     event.Text,
+				Type:     event.Type,
+				Team:     event.Team,
+				ThreadTs: event.ThreadTs,
+				Raw:      event.Raw,
+			})
+
+			// increment reply count if it's a reply
+			if event.ThreadTs != "" && event.ThreadTs != event.Ts {
+				if err := store.IncrementReplyCount(teamID, event.Channel, event.ThreadTs, event.Ts, event.UserID()); err != nil {
+					log.Printf("Failed to increment reply count: %v", err)
+				}
+			}
 
 			log.Printf("Message stored in database for team %s: %s", teamID, event.Text)
 

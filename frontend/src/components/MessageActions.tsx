@@ -1,55 +1,46 @@
 import { MdRoundChat, MdRoundDelete } from "solid-icons/md";
+import { chatStore, setChatStore } from "../ChatStore";
 import { Message } from "../../bindings/fastslack/shared";
 import { DeleteMessage } from "../../bindings/fastslack/slackservice";
 import { useAuth } from "../AuthContext";
 import Actions, { Action } from "./Actions";
-import {
-  addMessages,
-  chatStore,
-  createTombstone,
-  removeMessage,
-  updateMessageContent,
-} from "../stores/ChatStore";
 
 export default function MessageActions(props: {
   message: Message;
   channelID: string;
   canOpenThread: boolean;
   canDelete: boolean;
-  handleThreadClick: (message: Message) => void;
 }) {
   const { message } = props;
   const { workspace } = useAuth();
 
+  function handleThreadClick() {
+    setChatStore({
+      threadTS: message.thread_ts || message.ts,
+      threadParent: message,
+      openThreads: {
+        ...chatStore.openThreads,
+        [props.channelID]: {
+          threadTs: message.thread_ts || message.ts,
+          threadParent: message,
+        },
+      },
+    });
+  }
+
   async function handleDeleteClick() {
     // optimistic remove the message from UI
-    // if it's a thread parent message, we should make a tombstone
-    const previousMessage = props.message;
-    const isRoot =
-      !!props.message.ts &&
-      (!props.message.thread_ts ||
-        props.message.thread_ts === props.message.ts);
-
-    if (isRoot) {
-      // check if it has children
-      const children =
-        chatStore.channels[props.channelID]?.threadMessageIds[
-          props.message.ts
-        ] ?? [];
-      if (children.length > 0) {
-        // make tombstone
-        updateMessageContent(
-          props.channelID,
-          props.message.ts,
-          createTombstone(props.message),
-        );
-      } else {
-        // just remove it
-        removeMessage(props.channelID, props.message.ts);
-      }
+    if (props.message.thread_ts) {
+      setChatStore("threadReplies", props.message.thread_ts, (prev) =>
+        prev ? prev.filter((m) => m.ts !== props.message.ts) : [],
+      );
     } else {
-      removeMessage(props.channelID, props.message.ts);
+      setChatStore("messages", (prev) =>
+        prev ? prev.filter((m) => m.ts !== props.message.ts) : [],
+      );
     }
+
+    const previousMessage = props.message;
 
     await DeleteMessage(
       workspace()!,
@@ -59,16 +50,22 @@ export default function MessageActions(props: {
     ).catch((err) => {
       console.error("Failed to delete message", err);
       // revert the optimistic update
-      addMessages(props.channelID, [previousMessage]);
+      if (props.message.thread_ts) {
+        setChatStore("threadReplies", props.message.thread_ts, (prev) =>
+          prev ? [...prev, previousMessage] : [previousMessage],
+        );
+      } else {
+        setChatStore("messages", (prev) =>
+          prev ? [...prev, previousMessage] : [previousMessage],
+        );
+      }
     });
   }
 
   const openThreadAction: Action = {
     icon: <MdRoundChat size={20} />,
     text: "Open thread",
-    onClick: () => {
-      props.handleThreadClick(message);
-    },
+    onClick: handleThreadClick,
   };
 
   const deleteMessageAction: Action = {
