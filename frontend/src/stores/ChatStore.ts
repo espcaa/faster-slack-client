@@ -320,3 +320,65 @@ export function fetchThreadMessagesAfter(
       setLoading({ ...loading(), [threadTs]: false });
     });
 }
+
+export const reconcileOptimisticMessage = (
+  channelId: string,
+  tempTs: string,
+  finalMessage: Message,
+) => {
+  const channel = chatStore.channels[channelId];
+  if (!channel || !channel.messages[tempTs]) return;
+
+  const finalTs = finalMessage.ts;
+  const threadTs = finalMessage.thread_ts;
+
+  setChatStore("channels", channelId, "messages", (msgs) => {
+    const newMsgs = { ...msgs };
+    delete newMsgs[tempTs];
+    newMsgs[finalTs] = finalMessage;
+    return newMsgs;
+  });
+
+  setChatStore("channels", channelId, "channelMessageIds", (ids) =>
+    ids.map((id) => (id === tempTs ? finalTs : id)),
+  );
+
+  if (threadTs) {
+    setChatStore("channels", channelId, "threadMessageIds", threadTs, (ids) =>
+      ids ? ids.map((id) => (id === tempTs ? finalTs : id)) : [],
+    );
+  }
+};
+
+export const updateMessageContent = (
+  channelId: string,
+  ts: string,
+  updatedFields: Partial<Message>,
+) => {
+  const channel = chatStore.channels[channelId];
+  if (!channel || !channel.messages[ts]) return;
+
+  setChatStore("channels", channelId, "messages", ts, (prev) => ({
+    ...prev,
+    ...updatedFields,
+  }));
+};
+
+export const createTombstone = (oldMsg: Message): Message => {
+  return new Message({
+    ts: oldMsg.ts,
+    thread_ts: oldMsg.thread_ts,
+    type: "message",
+    subtype: "tombstone",
+
+    text: "This message was deleted.",
+    user: "USLACKBOT",
+
+    reply_count: oldMsg.reply_count,
+    reply_users: oldMsg.reply_users,
+    latest_reply: oldMsg.latest_reply,
+
+    blocks: [],
+    files: [],
+  });
+};

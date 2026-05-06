@@ -8,6 +8,8 @@ import { createEffect, on, Show } from "solid-js";
 
 const GROUP_WINDOW_MS = 2 * 60 * 1000;
 
+const STICKY_THRESHOLD_PX = 40;
+
 export default function MessageStream(props: {
   direction: "up" | "down";
   channelID: string;
@@ -16,6 +18,15 @@ export default function MessageStream(props: {
 }) {
   let containerRef!: HTMLDivElement;
   let virtuaRef: VirtualizerHandle | undefined;
+  let stickToBottom = true;
+  let didInitialScroll = false;
+
+  const isNearBottom = () => {
+    if (!virtuaRef) return true;
+    const distance =
+      virtuaRef.scrollSize - virtuaRef.viewportSize - virtuaRef.scrollOffset;
+    return distance <= STICKY_THRESHOLD_PX;
+  };
 
   function shouldGroupWithPrev(
     prev: Message | undefined,
@@ -25,8 +36,17 @@ export default function MessageStream(props: {
     if (!prev.user || !cur.user) return false;
     if (prev.user !== cur.user) return false;
 
-    const prevTs = Number(prev.ts) * 1000;
-    const curTs = Number(cur.ts) * 1000;
+    let prevTs = Number(prev.ts) * 1000;
+    let curTs = Number(cur.ts) * 1000;
+
+    // if prevTs or curTs ends with .pending, remove it
+    if (prev.ts.endsWith(".pending")) {
+      // remove it
+      prevTs = Number(prev.ts.replace(".pending", "")) * 1000;
+    } else if (cur.ts.endsWith(".pending")) {
+      curTs = Number(cur.ts.replace(".pending", "")) * 1000;
+    }
+
     if (!Number.isFinite(prevTs) || !Number.isFinite(curTs)) return false;
 
     if (curTs - prevTs > GROUP_WINDOW_MS) return false;
@@ -54,8 +74,21 @@ export default function MessageStream(props: {
     on(
       () => ids(),
       (currentIds, prevIds) => {
-        const isFirstLoad = !prevIds || prevIds.length === 0;
-        if (isFirstLoad && currentIds.length > 0) {
+        if (currentIds.length === 0) return;
+
+        const isFirstLoad =
+          !didInitialScroll && (!prevIds || prevIds.length === 0);
+
+        if (isFirstLoad) {
+          didInitialScroll = true;
+          stickToBottom = true;
+          queueMicrotask(() => {
+            virtuaRef?.scrollToIndex(currentIds.length - 1, { align: "end" });
+          });
+          return;
+        }
+
+        if (stickToBottom) {
           queueMicrotask(() => {
             virtuaRef?.scrollToIndex(currentIds.length - 1, { align: "end" });
           });
@@ -86,6 +119,10 @@ export default function MessageStream(props: {
           data={items()}
           shift={props.direction === "up"}
           ref={(v) => (virtuaRef = v)}
+          onScroll={() => {
+            if (!didInitialScroll) return;
+            stickToBottom = isNearBottom();
+          }}
         >
           {(item) => {
             const channel = chatStore.channels[props.channelID];

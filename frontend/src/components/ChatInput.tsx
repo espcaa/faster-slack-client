@@ -6,7 +6,11 @@ import {
   Show,
   createResource,
 } from "solid-js";
-import { SendMessage, SendTyping } from "../../bindings/fastslack/slackservice";
+import {
+  DeleteMessage,
+  SendMessage,
+  SendTyping,
+} from "../../bindings/fastslack/slackservice";
 import styles from "./ChatInput.module.css";
 import { Events } from "@wailsio/runtime";
 import { useAuth } from "../AuthContext";
@@ -15,6 +19,7 @@ import {
   addMessages,
   chatStore,
   ensureUserInfo,
+  reconcileOptimisticMessage,
   removeMessage,
 } from "../stores/ChatStore";
 
@@ -82,22 +87,32 @@ export default function ChatInput(props: {
     setText("");
     if (inputRef) inputRef.value = "";
 
-    SendMessage(
-      props.teamID,
-      props.channelID,
-      blocks,
-      props.threadTS ?? "",
-    ).catch((e) => {
-      console.error("Failed to send message", e);
-      if (props.threadTS) {
-        removeMessage(props.channelID, tempTS);
-      } else {
-        removeMessage(props.channelID, tempTS);
-      }
-      setText(previousText);
-      if (inputRef) inputRef.value = previousText;
-      alert("Message failed to send. Please try again.");
-    });
+    SendMessage(props.teamID, props.channelID, blocks, props.threadTS ?? "")
+      .catch((e) => {
+        console.error("Failed to send message", e);
+        if (props.threadTS) {
+          removeMessage(props.channelID, tempTS);
+        } else {
+          removeMessage(props.channelID, tempTS);
+        }
+        setText(previousText);
+        if (inputRef) inputRef.value = previousText;
+        alert("Message failed to send. Please try again.");
+      })
+      .then((res) => {
+        // update ts to the real one from server
+        if (!res) {
+          // what?
+          removeMessage(props.channelID, tempTS);
+          alert("Message failed to send. Please try again.");
+          return;
+        }
+        const realTS = res;
+        reconcileOptimisticMessage(props.channelID, tempTS, {
+          ...optimisticMessage,
+          ts: realTS,
+        });
+      });
   };
 
   const [typingText] = createResource(
