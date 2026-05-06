@@ -4,8 +4,14 @@ import { Message } from "../../bindings/fastslack/shared";
 import ChatInput from "./ChatInput";
 import MessageStream from "./MessageStream";
 import MessageItem from "./MessageItem";
-import { createEffect, on } from "solid-js";
-import { chatStore, fetchLatestThreadReplies } from "../stores/ChatStore";
+import { createEffect, onCleanup } from "solid-js";
+import {
+  chatStore,
+  fetchLatestThreadReplies,
+  fetchThreadMessagesAfter,
+  isFetchingThread,
+  setActiveThread,
+} from "../stores/ChatStore";
 
 export default function ThreadView(props: {
   teamID: string;
@@ -15,19 +21,28 @@ export default function ThreadView(props: {
   let containerRef!: HTMLDivElement;
 
   // boot the thread: ensure store + fetch latest if we have nothing
-  createEffect(
-    on(
-      () => [props.channelID, props.parentMessage.ts] as const,
-      ([channelID, threadTs]) => {
-        const existing =
-          chatStore.channels[channelID]?.threadMessageIds[threadTs];
+  createEffect(() => {
+    const channelID = props.channelID;
+    const threadTs = props.parentMessage.ts;
 
-        if (!existing) {
-          fetchLatestThreadReplies(props.teamID, channelID, threadTs);
-        }
-      },
-    ),
-  );
+    console.log(`[ThreadView] createEffect triggered for thread ${threadTs}`);
+    console.log(`[ThreadView] Parent message:`, props.parentMessage);
+
+    // Set this thread as active
+    setActiveThread(threadTs);
+
+    const existing = chatStore.channels[channelID]?.threadMessageIds[threadTs];
+    console.log(`[ThreadView] Existing thread messages:`, existing);
+    if (!existing) {
+      console.log(`[ThreadView] Fetching thread replies`);
+      fetchLatestThreadReplies(props.teamID, channelID, threadTs);
+    }
+  });
+
+  onCleanup(() => {
+    // Clear active thread when component unmounts
+    setActiveThread(undefined);
+  });
 
   return (
     <div class={threadStyles.panel}>
@@ -78,6 +93,17 @@ export default function ThreadView(props: {
             //     </div>
             //   </Show>
             // )}
+            onReachBottom={() => {
+              fetchThreadMessagesAfter(
+                props.teamID,
+                props.channelID,
+                props.parentMessage.ts,
+                chatStore.channels[props.channelID]?.threadMessageIds[
+                  props.parentMessage.ts
+                ]?.slice(-1)[0],
+              );
+            }}
+            isLoadingMore={() => isFetchingThread(props.parentMessage.ts)}
           />
 
           <div class={threadStyles.inputContainer}>

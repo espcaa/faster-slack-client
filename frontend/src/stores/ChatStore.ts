@@ -217,6 +217,8 @@ const [loading, setLoading] = createSignal<{ [key: string]: boolean }>({});
 
 export const isFetching = (key: string) => !!loading()[key];
 
+export const isFetchingThread = (threadId: string) => !!loading()[threadId];
+
 export const fetchLatestMessages = async (
   teamId: string,
   channelId: string,

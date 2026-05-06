@@ -17,6 +17,7 @@ export default function MessageStream(props: {
   threadID: string | null;
   onThreadClick: (m: Message) => void;
   onReachTop?: () => void;
+  onReachBottom?: () => void;
   isLoadingMore?: () => boolean;
 }) {
   let containerRef!: HTMLDivElement;
@@ -37,6 +38,15 @@ export default function MessageStream(props: {
     if (!virtuaRef) return false;
     return virtuaRef.scrollOffset <= TOP_LOAD_THRESHOLD_PX;
   };
+
+  let wasNearBottom = false;
+  const nearBottom = isNearBottom();
+
+  if (nearBottom && !wasNearBottom) {
+    props.onReachBottom?.();
+  }
+
+  wasNearBottom = nearBottom;
 
   function shouldGroupWithPrev(
     prev: Message | undefined,
@@ -80,10 +90,6 @@ export default function MessageStream(props: {
     return arr.map((id, index) => ({ id, index }));
   };
 
-  // Reset all per-stream state when we switch channel or thread, otherwise
-  // state from the previous view leaks into the new one (e.g. didInitialScroll
-  // stays true, so we never auto-scroll to bottom on the new channel, and we
-  // immediately fire onReachTop in a loop because we're stuck at the top).
   createEffect(
     on(
       () => [props.channelID, props.threadID] as const,
@@ -154,13 +160,23 @@ export default function MessageStream(props: {
           ref={(v) => (virtuaRef = v)}
           onScroll={() => {
             if (!didInitialScroll) return;
+
             stickToBottom = isNearBottom();
+
             const nearTop = isNearTop();
             setShift(nearTop);
+
             if (nearTop && !wasNearTop) {
               props.onReachTop?.();
             }
+
+            const nearBottom = isNearBottom();
+            if (nearBottom && !wasNearBottom) {
+              props.onReachBottom?.();
+            }
+
             wasNearTop = nearTop;
+            wasNearBottom = nearBottom;
           }}
         >
           {(item) => {
