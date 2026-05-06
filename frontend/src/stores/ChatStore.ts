@@ -1,4 +1,4 @@
-import { createStore } from "solid-js/store";
+import { createStore, produce } from "solid-js/store";
 import {
   AppProfile,
   Message,
@@ -107,56 +107,75 @@ export const ensureUserInfo = (workspaceId: string, userId: string) => {
   batchTimeout = setTimeout(() => processUserQueue(workspaceId), 50);
 };
 
+// Strip back-references and class identity so Solid's store doesn't try to
+// proxy a graph that may contain cycles (root / parent_message /
+// previous_message / replies all point at sibling Message instances coming
+// from the bindings).
+const toPlainMessage = (msg: Message): Message => {
+  const plain: any = { ...msg };
+  delete plain.root;
+  delete plain.parent_message;
+  delete plain.previous_message;
+  delete plain.replies;
+  return plain as Message;
+};
+
+const insertSorted = (arr: string[], value: string) => {
+  const index = arr.findIndex((id) => id > value);
+  if (index === -1) return [...arr, value];
+  return [...arr.slice(0, index), value, ...arr.slice(index)];
+};
+
 // message handling
 export const addMessages = (channelId: string, messages: Message[]) => {
   ensureChannel(channelId);
+  if (messages.length === 0) return;
 
-  messages.forEach((msg) => {
-    const ts = msg.ts;
-    const threadTs = msg.thread_ts;
+  // Batch every per-message mutation into a single store update so we don't
+  // fire ~4×N reactive updates (and avoid re-walking the message graph for
+  // each of them).
+  setChatStore(
+    "channels",
+    channelId,
+    produce((channel) => {
+      for (const raw of messages) {
+        const ts = raw.ts;
+        const threadTs = raw.thread_ts;
+        const msg = toPlainMessage(raw);
 
-    setChatStore("channels", channelId, "messages", ts, msg);
+        channel.messages[ts] = msg;
 
-    if (!threadTs || threadTs === ts || msg.subtype === "thread_broadcast") {
-      const insertSorted = (arr: string[], value: string) => {
-        const index = arr.findIndex((id) => id > value);
-        if (index === -1) return [...arr, value];
-        return [...arr.slice(0, index), value, ...arr.slice(index)];
-      };
+        if (
+          !threadTs ||
+          threadTs === ts ||
+          msg.subtype === "thread_broadcast"
+        ) {
+          if (!channel.channelMessageIds.includes(ts)) {
+            channel.channelMessageIds = insertSorted(
+              channel.channelMessageIds,
+              ts,
+            );
+          }
+        }
 
-      setChatStore("channels", channelId, "channelMessageIds", (ids) => {
-        if (ids.includes(ts)) return ids;
-        return insertSorted(ids, ts);
-      });
-    }
+        if (threadTs) {
+          if (!channel.threadMessageIds[threadTs]) {
+            channel.threadMessageIds[threadTs] = [];
 
-    if (threadTs) {
-      if (!chatStore.channels[channelId].threadMessageIds[threadTs]) {
-        setChatStore("channels", channelId, "threadMessageIds", threadTs, []);
+            const parentList = channel.threadIdsByParent[threadTs];
+            channel.threadIdsByParent[threadTs] = parentList
+              ? [...new Set([...parentList, ts])]
+              : [ts];
+          }
 
-        setChatStore(
-          "channels",
-          channelId,
-          "threadIdsByParent",
-          threadTs,
-          (prev) => {
-            return prev ? [...new Set([...prev, ts])] : [ts];
-          },
-        );
+          const ids = channel.threadMessageIds[threadTs];
+          if (!ids.includes(ts)) {
+            channel.threadMessageIds[threadTs] = [...ids, ts].sort();
+          }
+        }
       }
-
-      setChatStore(
-        "channels",
-        channelId,
-        "threadMessageIds",
-        threadTs,
-        (ids) => {
-          if (ids.includes(ts)) return ids;
-          return [...ids, ts].sort();
-        },
-      );
-    }
-  });
+    }),
+  );
 };
 
 export const removeMessage = (channelId: string, ts: string) => {
@@ -337,18 +356,23 @@ export const reconcileOptimisticMessage = (
   setChatStore("channels", channelId, "messages", (msgs) => {
     const newMsgs = { ...msgs };
     delete newMsgs[tempTs];
-    newMsgs[finalTs] = finalMessage;
+    newMsgs[finalTs] = toPlainMessage(finalMessage);
     return newMsgs;
   });
 
   setChatStore("channels", channelId, "channelMessageIds", (ids) =>
-    ids.map((id) => (id === tempTs ? finalTs : id)),
+    ids.includes(finalTs)
+      ? ids.filter((id) => id !== tempTs)
+      : ids.map((id) => (id === tempTs ? finalTs : id)),
   );
 
   if (threadTs) {
-    setChatStore("channels", channelId, "threadMessageIds", threadTs, (ids) =>
-      ids ? ids.map((id) => (id === tempTs ? finalTs : id)) : [],
-    );
+    setChatStore("channels", channelId, "threadMessageIds", threadTs, (ids) => {
+      if (!ids) return [];
+      return ids.includes(finalTs)
+        ? ids.filter((id) => id !== tempTs)
+        : ids.map((id) => (id === tempTs ? finalTs : id));
+    });
   }
 };
 
