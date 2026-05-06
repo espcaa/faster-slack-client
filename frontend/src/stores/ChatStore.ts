@@ -289,8 +289,6 @@ export const fetchLatestThreadReplies = async (
 
   try {
     const resp = await GetLatestThreadReplies(teamId, channelId, threadTs);
-    // Drop the response if the user has navigated away from this thread.
-    if (chatStore.currentThreadId !== threadTs) return;
     if (resp && resp.messages) {
       addMessages(channelId, resp.messages);
     }
@@ -310,7 +308,6 @@ export function fetchThreadMessagesBefore(
 
   return GetThreadRepliesBefore(teamId, channelId, beforeTs, threadTs)
     .then((resp) => {
-      if (chatStore.currentThreadId !== threadTs) return;
       if (resp && resp.messages) {
         addMessages(channelId, resp.messages);
       }
@@ -331,7 +328,6 @@ export function fetchThreadMessagesAfter(
 
   return GetThreadRepliesAfter(teamId, channelId, afterTs, threadTs)
     .then((resp) => {
-      if (chatStore.currentThreadId !== threadTs) return;
       if (resp && resp.messages) {
         addMessages(channelId, resp.messages);
       }

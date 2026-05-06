@@ -33,7 +33,12 @@ export default function ThreadView(props: {
 
     const existing = chatStore.channels[channelID]?.threadMessageIds[threadTs];
     console.log(`[ThreadView] Existing thread messages:`, existing);
-    if (!existing) {
+    // The parent message itself lives in threadMessageIds[threadTs], so a
+    // length of 1 (or 0) means we still need to fetch the actual replies.
+    const replyCount = existing
+      ? existing.filter((id) => id !== threadTs).length
+      : 0;
+    if (replyCount === 0) {
       console.log(`[ThreadView] Fetching thread replies`);
       fetchLatestThreadReplies(props.teamID, channelID, threadTs);
     }
@@ -51,7 +56,7 @@ export default function ThreadView(props: {
         <button
           class={threadStyles.close}
           onClick={() => {
-            //TODO: close thread thingies
+            setActiveThread(undefined);
           }}
         >
           ✕
@@ -94,13 +99,16 @@ export default function ThreadView(props: {
             //   </Show>
             // )}
             onReachBottom={() => {
+              const lastTs =
+                chatStore.channels[props.channelID]?.threadMessageIds[
+                  props.parentMessage.ts
+                ]?.slice(-1)[0];
+              if (!lastTs) return;
               fetchThreadMessagesAfter(
                 props.teamID,
                 props.channelID,
                 props.parentMessage.ts,
-                chatStore.channels[props.channelID]?.threadMessageIds[
-                  props.parentMessage.ts
-                ]?.slice(-1)[0],
+                lastTs,
               );
             }}
             isLoadingMore={() => isFetchingThread(props.parentMessage.ts)}

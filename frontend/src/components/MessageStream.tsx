@@ -40,13 +40,6 @@ export default function MessageStream(props: {
   };
 
   let wasNearBottom = false;
-  const nearBottom = isNearBottom();
-
-  if (nearBottom && !wasNearBottom) {
-    props.onReachBottom?.();
-  }
-
-  wasNearBottom = nearBottom;
 
   function shouldGroupWithPrev(
     prev: Message | undefined,
