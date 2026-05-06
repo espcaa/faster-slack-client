@@ -9,6 +9,8 @@ import {
   ensureChannel,
   fetchLatestMessages,
   fetchLatestThreadReplies,
+  fetchMessagesBefore,
+  isFetching,
   setActiveChannel,
   setActiveThread,
 } from "../stores/ChatStore";
@@ -48,6 +50,10 @@ export default function ChannelView(props: { channelID: string }) {
               setActiveThread(m.ts);
               fetchLatestThreadReplies(workspace()!, props.channelID, m.ts);
             }}
+            onReachTop={() => {
+              fetchMessagesBefore(workspace()!, props.channelID);
+            }}
+            isLoadingMore={() => isFetching(props.channelID)}
           />
         </div>
         <ChatInput teamID={workspace()!} channelID={props.channelID} />

@@ -175,10 +175,18 @@ export default function MessageItem(props: {
           </Show>
         </Show>
         <div class={styles.text}>
-          {props.message.ts}
-          <BlockKitRenderer blocks={props.message.blocks} />
-          <Show when={props.message.edited?.ts}>
-            <EditedIndicator />
+          <Show
+            when={props.message.subtype === "tombstone"}
+            fallback={
+              <>
+                <BlockKitRenderer blocks={props.message.blocks} />
+                <Show when={props.message.edited?.ts}>
+                  <EditedIndicator />
+                </Show>
+              </>
+            }
+          >
+            This message was deleted.
           </Show>
         </div>
         <Show when={!!props.message.files?.length}>

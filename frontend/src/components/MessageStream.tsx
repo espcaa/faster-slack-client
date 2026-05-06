@@ -4,28 +4,38 @@ import { chatStore } from "../stores/ChatStore";
 import { Message } from "../../bindings/fastslack/shared";
 import Scrollbar from "./misc/Scrollbar";
 import styles from "./MessageStream.module.css";
-import { createEffect, on, Show } from "solid-js";
+import { createEffect, createSignal, on, Show } from "solid-js";
 
 const GROUP_WINDOW_MS = 2 * 60 * 1000;
 
 const STICKY_THRESHOLD_PX = 40;
+const TOP_LOAD_THRESHOLD_PX = 200;
 
 export default function MessageStream(props: {
   direction: "up" | "down";
   channelID: string;
   threadID: string | null;
   onThreadClick: (m: Message) => void;
+  onReachTop?: () => void;
+  isLoadingMore?: () => boolean;
 }) {
   let containerRef!: HTMLDivElement;
   let virtuaRef: VirtualizerHandle | undefined;
   let stickToBottom = true;
   let didInitialScroll = false;
+  let wasNearTop = false;
+  const [shift, setShift] = createSignal(false);
 
   const isNearBottom = () => {
     if (!virtuaRef) return true;
     const distance =
       virtuaRef.scrollSize - virtuaRef.viewportSize - virtuaRef.scrollOffset;
     return distance <= STICKY_THRESHOLD_PX;
+  };
+
+  const isNearTop = () => {
+    if (!virtuaRef) return false;
+    return virtuaRef.scrollOffset <= TOP_LOAD_THRESHOLD_PX;
   };
 
   function shouldGroupWithPrev(
@@ -69,6 +79,23 @@ export default function MessageStream(props: {
     const arr = ids();
     return arr.map((id, index) => ({ id, index }));
   };
+
+  // Reset all per-stream state when we switch channel or thread, otherwise
+  // state from the previous view leaks into the new one (e.g. didInitialScroll
+  // stays true, so we never auto-scroll to bottom on the new channel, and we
+  // immediately fire onReachTop in a loop because we're stuck at the top).
+  createEffect(
+    on(
+      () => [props.channelID, props.threadID] as const,
+      () => {
+        didInitialScroll = false;
+        stickToBottom = true;
+        wasNearTop = false;
+        setShift(false);
+      },
+      { defer: true },
+    ),
+  );
 
   createEffect(
     on(
@@ -115,13 +142,25 @@ export default function MessageStream(props: {
           <div style={{ "flex-grow": 1 }} />
         </Show>
 
+        <Show when={props.isLoadingMore?.()}>
+          <div class={styles.topLoader}>
+            <div class={styles.spinner} />
+          </div>
+        </Show>
+
         <Virtualizer
           data={items()}
-          shift={props.direction === "up"}
+          shift={shift()}
           ref={(v) => (virtuaRef = v)}
           onScroll={() => {
             if (!didInitialScroll) return;
             stickToBottom = isNearBottom();
+            const nearTop = isNearTop();
+            setShift(nearTop);
+            if (nearTop && !wasNearTop) {
+              props.onReachTop?.();
+            }
+            wasNearTop = nearTop;
           }}
         >
           {(item) => {

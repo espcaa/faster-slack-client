@@ -6,11 +6,7 @@ import {
   Show,
   createResource,
 } from "solid-js";
-import {
-  DeleteMessage,
-  SendMessage,
-  SendTyping,
-} from "../../bindings/fastslack/slackservice";
+import { SendMessage, SendTyping } from "../../bindings/fastslack/slackservice";
 import styles from "./ChatInput.module.css";
 import { Events } from "@wailsio/runtime";
 import { useAuth } from "../AuthContext";

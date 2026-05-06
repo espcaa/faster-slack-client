@@ -199,6 +199,8 @@ export const setActiveThread = (threadId: string | undefined) => {
 
 const [loading, setLoading] = createSignal<{ [key: string]: boolean }>({});
 
+export const isFetching = (key: string) => !!loading()[key];
+
 export const fetchLatestMessages = async (
   teamId: string,
   channelId: string,
